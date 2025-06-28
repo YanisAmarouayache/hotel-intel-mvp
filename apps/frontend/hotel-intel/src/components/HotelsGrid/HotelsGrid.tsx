@@ -1,7 +1,7 @@
 import React from 'react';
 import { Grid } from '@mui/material';
 import HotelCard from '../HotelCard';
-import type { Hotel } from '../../hooks/useHotels';
+import type { Hotel } from '../../types';
 
 interface HotelsGridProps {
   hotels: Hotel[];

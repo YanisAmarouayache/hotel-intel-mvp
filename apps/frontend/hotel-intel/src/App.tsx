@@ -1,51 +1,61 @@
 import React from 'react';
 import { ApolloProvider } from '@apollo/client';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { client } from './lib/apollo';
+import { AppLayout } from './components/Layout';
+import { theme } from './constants/theme';
+import DashboardPage from './pages/DashboardPage';
 import HotelsPage from './pages/HotelsPage';
+import AddCompetitorPage from './pages/AddCompetitorPage';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h3: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          textTransform: 'none',
-          fontWeight: 600,
-        },
-      },
-    },
-  },
-});
+// Pages temporaires pour les routes non implémentées
+const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
+  <div style={{ padding: '2rem', textAlign: 'center' }}>
+    <h2>{title}</h2>
+    <p>Page en cours de développement...</p>
+  </div>
+);
 
 function App() {
   return (
     <ApolloProvider client={client}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <HotelsPage />
+        <Router>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/my-hotels" element={<HotelsPage />} />
+              <Route path="/add-competitor" element={<AddCompetitorPage />} />
+              <Route 
+                path="/competitor-analysis" 
+                element={<PlaceholderPage title="Analyse Concurrentielle" />} 
+              />
+              <Route 
+                path="/price-evolution" 
+                element={<PlaceholderPage title="Évolution des Prix" />} 
+              />
+              <Route 
+                path="/yield-strategy" 
+                element={<PlaceholderPage title="Stratégie de Yield" />} 
+              />
+              <Route 
+                path="/events" 
+                element={<PlaceholderPage title="Événements" />} 
+              />
+              <Route 
+                path="/criteria-weights" 
+                element={<PlaceholderPage title="Critères & Saisons" />} 
+              />
+              <Route 
+                path="/settings" 
+                element={<PlaceholderPage title="Paramètres" />} 
+              />
+            </Routes>
+          </AppLayout>
+        </Router>
       </ThemeProvider>
     </ApolloProvider>
   );

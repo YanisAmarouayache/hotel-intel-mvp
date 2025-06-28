@@ -1,69 +1,111 @@
-# React + TypeScript + Vite
+# Hotel Intel Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Application React moderne pour l'analyse concurrentielle hôtelière.
 
-Currently, two official plugins are available:
+## 🏗️ Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Structure des dossiers
+```
+src/
+├── components/           # Composants réutilisables
+│   ├── Dashboard/       # Composants spécifiques au dashboard
+│   ├── Layout/          # Composants de mise en page
+│   ├── Navigation/      # Composants de navigation
+│   ├── HotelCard/       # Carte d'hôtel
+│   ├── LoadingSpinner/  # Indicateur de chargement
+│   ├── ErrorDisplay/    # Affichage d'erreurs
+│   ├── EmptyState/      # États vides
+│   └── HotelsGrid/      # Grille d'hôtels
+├── constants/           # Constantes de l'application
+│   ├── navigation.ts    # Configuration de navigation
+│   └── theme.ts         # Configuration du thème
+├── hooks/               # Hooks personnalisés
+│   └── useHotels.ts     # Hook pour les données d'hôtels
+├── types/               # Types TypeScript
+│   └── index.ts         # Types centralisés
+├── graphql/             # Requêtes GraphQL
+│   └── queries.ts       # Définitions des requêtes
+├── lib/                 # Bibliothèques et configurations
+│   └── apollo.ts        # Configuration Apollo Client
+├── pages/               # Pages de l'application
+│   ├── DashboardPage.tsx
+│   ├── HotelsPage.tsx
+│   └── AddCompetitorPage.tsx
+└── App.tsx              # Point d'entrée
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🎨 Design System
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Thème Material UI
+- **Couleurs primaires** : Bleu (#1976d2)
+- **Couleurs secondaires** : Rose (#dc004e)
+- **Bordures arrondies** : 8px par défaut
+- **Typographie** : Roboto avec poids 600 pour les titres
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Composants réutilisables
+- **StatCard** : Carte de statistique avec tendance
+- **HotelCard** : Carte d'hôtel avec informations complètes
+- **LoadingSpinner** : Indicateur de chargement personnalisable
+- **ErrorDisplay** : Affichage d'erreurs avec différents niveaux
+- **EmptyState** : États vides avec messages personnalisables
+
+## 🧩 Composants
+
+### Navigation
+- **AppLayout** : Layout principal avec navigation latérale
+- **NavigationDrawer** : Drawer de navigation responsive
+- **NavigationItem** : Élément de navigation individuel
+- **AppHeader** : Barre d'application avec titre dynamique
+
+### Dashboard
+- **StatsGrid** : Grille de statistiques responsive
+- **StatCard** : Carte de statistique avec icône et tendance
+
+### Formulaires
+- **AddCompetitorPage** : Formulaire avec validation Zod
+- **React Hook Form** : Gestion des formulaires
+- **Validation** : Schémas Zod pour la validation
+
+## 🔧 Technologies
+
+- **React 18** avec TypeScript
+- **Material UI 5** pour le design system
+- **Apollo Client** pour GraphQL
+- **React Router DOM** pour la navigation
+- **React Hook Form** pour les formulaires
+- **Zod** pour la validation
+- **Vite** pour le build
+
+## 🚀 Fonctionnalités
+
+### ✅ Implémentées
+- [x] Layout responsive avec navigation
+- [x] Dashboard avec métriques
+- [x] Affichage des hôtels
+- [x] Formulaire d'ajout de compétiteur
+- [x] Validation des formulaires
+- [x] Gestion des états de chargement/erreur
+- [x] Thème cohérent et moderne
+
+### 🚧 En développement
+- [ ] Analyse concurrentielle
+- [ ] Évolution des prix
+- [ ] Stratégie de yield
+- [ ] Gestion des événements
+- [ ] Critères et pondération saisonnière
+- [ ] Paramètres de l'application
+
+## 📱 Responsive Design
+
+- **Mobile** : Navigation en drawer temporaire
+- **Tablet** : Layout adaptatif
+- **Desktop** : Navigation latérale fixe
+
+## 🎯 Bonnes pratiques
+
+- **Composants modulaires** : Chaque composant a une responsabilité unique
+- **Types centralisés** : Tous les types dans `/types/index.ts`
+- **Hooks personnalisés** : Logique métier dans des hooks réutilisables
+- **Validation stricte** : Zod pour la validation des données
+- **Design system** : Thème cohérent et composants réutilisables
+- **Performance** : Lazy loading et optimisations React
