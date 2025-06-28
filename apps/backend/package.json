@@ -1,6 +1,9 @@
 {
     "name": "backend",
     "main": "dist/main.js",
+    "prisma": {
+        "schema": "src/prisma/schema.prisma"
+    },
     "scripts": {
         "start": "ts-node src/main.ts",
         "start:prod": "node dist/main.js",
@@ -11,6 +14,7 @@
         "prisma:deploy": "prisma migrate deploy"
     },
     "dependencies": {
+        "@nestjs/apollo": "^10.2.1",
         "@nestjs/common": "^9.4.0",
         "@nestjs/core": "^9.4.0",
         "@nestjs/graphql": "^10.2.1",
