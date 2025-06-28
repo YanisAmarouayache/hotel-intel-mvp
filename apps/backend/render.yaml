@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: hotel-intel-backend
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+        value: /usr/bin/google-chrome-stable
+      - key: PLAYWRIGHT_CACHE_DIR
+        value: /tmp/playwright-cache
+      - key: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
+        value: "1"
+    buildFilter:
+      paths:
+        - apps/backend/**
+    healthCheckPath: /health 

@@ -18,6 +18,7 @@ export interface PricingData {
   currency: string;
   availability: boolean;
   roomType?: string;
+  minLengthOfStay?: number;
 }
 
 export interface ScrapedHotel {
