@@ -2,31 +2,31 @@
     "name": "backend",
     "main": "dist/main.js",
     "scripts": {
-      "start": "ts-node src/main.ts",
-      "start:prod": "node dist/main.js",
-      "build": "tsc -p tsconfig.json",
-      "dev": "nest start --watch",
-      "prisma:generate": "prisma generate",
-      "prisma:migrate": "prisma migrate dev",
-      "prisma:deploy": "prisma migrate deploy"
+        "start": "ts-node src/main.ts",
+        "start:prod": "node dist/main.js",
+        "build": "tsc -p tsconfig.json",
+        "dev": "nest start --watch",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:deploy": "prisma migrate deploy"
     },
-"dependencies": {
-  "@nestjs/common": "^9.4.0",
-  "@nestjs/core": "^9.4.0",
-  "@nestjs/platform-express": "^9.4.0",
-  "@nestjs/graphql": "^10.2.1",
-  "apollo-server-express": "^3.12.0",
-  "graphql": "^16.6.0",
-  "@prisma/client": "^5.0.0",
-  "zod": "^3.0.0"
-},
-"devDependencies": {
-  "@nestjs/cli": "^9.0.0",
-  "@nestjs/schematics": "^9.0.0",
-  "@types/node": "^20.0.0",
-  "prisma": "^5.0.0",
-  "ts-node": "^10.0.0",
-  "typescript": "^5.0.0"
+    "dependencies": {
+        "@nestjs/common": "^9.4.0",
+        "@nestjs/core": "^9.4.0",
+        "@nestjs/graphql": "^10.2.1",
+        "@nestjs/platform-express": "^9.4.0",
+        "@prisma/client": "^5.0.0",
+        "apollo-server-express": "^3.12.0",
+        "graphql": "^16.6.0",
+        "reflect-metadata": "^0.2.2",
+        "zod": "^3.0.0"
+    },
+    "devDependencies": {
+        "@nestjs/cli": "^9.0.0",
+        "@nestjs/schematics": "^9.0.0",
+        "@types/node": "^20.0.0",
+        "prisma": "^5.0.0",
+        "ts-node": "^10.0.0",
+        "typescript": "^5.0.0"
+    }
 }
-  }
-  
