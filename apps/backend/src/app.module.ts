@@ -4,6 +4,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppController } from './app.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { HotelModule } from './hotel/hotel.module';
+import { ScraperModule } from './scraper/scraper.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { HotelModule } from './hotel/hotel.module';
     }),
     PrismaModule,
     HotelModule,
+    ScraperModule,
   ],
   controllers: [AppController],
   providers: [],
