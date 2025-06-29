@@ -20,13 +20,42 @@ export class HotelService {
     });
   }
 
-  async create(data: { name: string; city: string; price: number }): Promise<Hotel> {
+  async create(data: { 
+    name: string; 
+    url: string; 
+    city: string; 
+    address?: string;
+    starRating?: number;
+    userRating?: number;
+    reviewCount?: number;
+    description?: string;
+    amenities?: string[];
+    images?: string[];
+    isCompetitor?: boolean;
+  }): Promise<Hotel> {
     return this.prisma.hotel.create({
-      data,
+      data: {
+        ...data,
+        isCompetitor: data.isCompetitor ?? true, // Default to competitor
+        amenities: data.amenities ?? [],
+        images: data.images ?? []
+      },
     });
   }
 
-  async update(id: number, data: { name?: string; city?: string; price?: number }): Promise<Hotel> {
+  async update(id: number, data: { 
+    name?: string; 
+    url?: string;
+    city?: string; 
+    address?: string;
+    starRating?: number;
+    userRating?: number;
+    reviewCount?: number;
+    description?: string;
+    amenities?: string[];
+    images?: string[];
+    isCompetitor?: boolean;
+  }): Promise<Hotel> {
     return this.prisma.hotel.update({
       where: { id },
       data,

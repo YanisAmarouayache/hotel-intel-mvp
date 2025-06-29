@@ -19,20 +19,60 @@ export class HotelResolver {
   @Mutation(() => Hotel)
   async createHotel(
     @Args('name') name: string,
+    @Args('url') url: string,
     @Args('city') city: string,
-    @Args('price') price: number,
+    @Args('address', { nullable: true }) address?: string,
+    @Args('starRating', { nullable: true }) starRating?: number,
+    @Args('userRating', { nullable: true }) userRating?: number,
+    @Args('reviewCount', { nullable: true }) reviewCount?: number,
+    @Args('description', { nullable: true }) description?: string,
+    @Args('amenities', { type: () => [String], nullable: true }) amenities?: string[],
+    @Args('images', { type: () => [String], nullable: true }) images?: string[],
+    @Args('isCompetitor', { nullable: true }) isCompetitor?: boolean,
   ): Promise<Hotel> {
-    return this.hotelService.create({ name, city, price });
+    return this.hotelService.create({ 
+      name, 
+      url, 
+      city, 
+      address, 
+      starRating, 
+      userRating, 
+      reviewCount, 
+      description, 
+      amenities, 
+      images, 
+      isCompetitor 
+    });
   }
 
   @Mutation(() => Hotel)
   async updateHotel(
     @Args('id', { type: () => Int }) id: number,
     @Args('name', { nullable: true }) name?: string,
+    @Args('url', { nullable: true }) url?: string,
     @Args('city', { nullable: true }) city?: string,
-    @Args('price', { nullable: true }) price?: number,
+    @Args('address', { nullable: true }) address?: string,
+    @Args('starRating', { nullable: true }) starRating?: number,
+    @Args('userRating', { nullable: true }) userRating?: number,
+    @Args('reviewCount', { nullable: true }) reviewCount?: number,
+    @Args('description', { nullable: true }) description?: string,
+    @Args('amenities', { type: () => [String], nullable: true }) amenities?: string[],
+    @Args('images', { type: () => [String], nullable: true }) images?: string[],
+    @Args('isCompetitor', { nullable: true }) isCompetitor?: boolean,
   ): Promise<Hotel> {
-    return this.hotelService.update(id, { name, city, price });
+    return this.hotelService.update(id, { 
+      name, 
+      url, 
+      city, 
+      address, 
+      starRating, 
+      userRating, 
+      reviewCount, 
+      description, 
+      amenities, 
+      images, 
+      isCompetitor 
+    });
   }
 
   @Mutation(() => Hotel)
