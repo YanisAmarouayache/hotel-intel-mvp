@@ -11,6 +11,10 @@ npm install
 echo "🔧 Installing Puppeteer Chrome browser..."
 npm install puppeteer --unsafe-perm=true
 
+# Install Chrome browser explicitly
+echo "🔧 Installing Chrome browser explicitly..."
+npx puppeteer browsers install chrome --unsafe-perm=true
+
 # Find Chrome executable
 echo "🔍 Looking for Chrome executable..."
 CHROME_PATH=$(find /opt/render/.cache/puppeteer -name "chrome" -type f 2>/dev/null | head -1)
