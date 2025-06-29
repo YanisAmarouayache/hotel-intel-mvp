@@ -1,24 +1,40 @@
 #!/bin/bash
 
-# Build script optimized for Render deployment with Puppeteer
-set -e
-
-echo "🚀 Starting Render build process with Puppeteer..."
+# Build script for Render deployment
+echo "🚀 Starting build process for Render..."
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm install --legacy-peer-deps
+npm install
 
-# Generate Prisma client
-echo "🗄️ Generating Prisma client..."
-npx prisma generate
-
-# Run database migrations
-echo "🔄 Running database migrations..."
-npx prisma migrate deploy
+# Install Puppeteer dependencies for Render
+echo "🔧 Installing Puppeteer dependencies..."
+npx puppeteer browsers install chrome
 
 # Build the application
-echo "🔨 Building application..."
+echo "🔨 Building the application..."
 npm run build
 
-echo "✅ Render build completed successfully with Puppeteer!" 
+# Check if build was successful
+echo "📁 Checking build output..."
+if [ -d "dist" ]; then
+    echo "✅ Build directory exists!"
+    echo "📁 Contents of dist/:"
+    ls -la dist/
+    
+    if [ -f "dist/main.js" ]; then
+        echo "✅ main.js found in dist/"
+    else
+        echo "❌ main.js NOT found in dist/"
+        echo "📁 Available files in dist/:"
+        find dist/ -type f -name "*.js" | head -10
+        exit 1
+    fi
+else
+    echo "❌ Build failed - dist directory not found"
+    echo "📁 Current directory contents:"
+    ls -la
+    exit 1
+fi
+
+echo "🎉 Build process completed successfully!" 
