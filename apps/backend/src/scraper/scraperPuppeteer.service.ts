@@ -20,6 +20,35 @@ export class ScraperPuppeteerService {
     if (!this.browser) {
       this.logger.log('🚀 Initializing Puppeteer browser for Render...');
       
+      // Try to find Chrome executable on Render
+      let chromePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+      if (!chromePath) {
+        // Common Chrome paths on Render
+        const possiblePaths = [
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/chromium-browser',
+          '/opt/render/.cache/puppeteer/chrome/linux-121.0.6167.85/chrome-linux64/chrome',
+          '/opt/render/.cache/puppeteer/chrome/linux-*/chrome-linux64/chrome'
+        ];
+        
+        for (const path of possiblePaths) {
+          try {
+            const fs = require('fs');
+            if (fs.existsSync(path)) {
+              chromePath = path;
+              this.logger.log(`✅ Found Chrome at: ${chromePath}`);
+              break;
+            }
+          } catch (e) {
+            // Continue to next path
+          }
+        }
+        
+        if (!chromePath) {
+          this.logger.log('⚠️ Chrome not found in common paths, letting Puppeteer find it automatically');
+        }
+      }
+      
       this.browser = await puppeteer.launch({
         headless: 'new', // Use new headless mode for better performance
         args: [
@@ -37,7 +66,7 @@ export class ScraperPuppeteerService {
           '--no-zygote',
           '--memory-pressure-off',
         ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        executablePath: chromePath,
         timeout: 30000, // Reduced timeout for faster startup
       });
       
