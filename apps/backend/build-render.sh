@@ -7,7 +7,11 @@ echo "🚀 Starting build process for Render..."
 echo "📦 Installing dependencies..."
 npm install
 
-# Build the application (Chrome will be installed automatically by Puppeteer)
+# Install Puppeteer Chrome browser for Render
+echo "🔧 Installing Puppeteer Chrome browser..."
+npx puppeteer browsers install chrome
+
+# Build the application
 echo "🔨 Building the application..."
 npm run build
 
