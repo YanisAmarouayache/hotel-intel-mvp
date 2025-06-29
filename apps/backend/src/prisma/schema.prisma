@@ -11,12 +11,70 @@ datasource db {
 }
 
 model Hotel {
-  id        Int      @id @default(autoincrement())
-  name      String
-  city      String
-  price     Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String
+  url         String   @unique // Booking.com URL
+  address     String?
+  city        String
+  starRating  Float?
+  userRating  Float?
+  reviewCount Int?
+  description String?
+  amenities   String[] // Array of amenities
+  images      String[] // Array of image URLs
+  isCompetitor Boolean @default(true) // true = competitor, false = own hotel
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  roomCategories RoomCategory[]
+  dailyPrices    DailyPrice[]
+  priceHistory   PriceHistory[]
 
   @@map("hotels")
+}
+
+model RoomCategory {
+  id          Int      @id @default(autoincrement())
+  name        String   // e.g., "Standard Room", "Deluxe Suite"
+  description String?
+  hotelId     Int
+  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  dailyPrices DailyPrice[]
+
+  @@map("room_categories")
+}
+
+model DailyPrice {
+  id             Int          @id @default(autoincrement())
+  date           DateTime     // Date for this price
+  price          Float        // Price for 1 night
+  currency       String       @default("EUR")
+  availability   Boolean      @default(true)
+  hotelId        Int
+  hotel          Hotel        @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  roomCategoryId Int?
+  roomCategory   RoomCategory? @relation(fields: [roomCategoryId], references: [id], onDelete: SetNull)
+  scrapedAt      DateTime     @default(now()) // When this price was scraped
+
+  @@unique([hotelId, roomCategoryId, date]) // One price per hotel/room/date
+  @@map("daily_prices")
+}
+
+model PriceHistory {
+  id        Int      @id @default(autoincrement())
+  hotelId   Int
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  date      DateTime // Date of the price snapshot
+  avgPrice  Float    // Average price for this date
+  minPrice  Float    // Minimum price for this date
+  maxPrice  Float    // Maximum price for this date
+  createdAt DateTime @default(now())
+
+  @@unique([hotelId, date]) // One history entry per hotel/date
+  @@map("price_history")
 } 
