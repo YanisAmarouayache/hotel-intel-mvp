@@ -9,7 +9,7 @@ npm install
 
 # Install Puppeteer Chrome browser for Render
 echo "🔧 Installing Puppeteer Chrome browser..."
-npx puppeteer browsers install chrome
+npm install puppeteer --unsafe-perm=true
 
 # Build the application
 echo "🔨 Building the application..."
