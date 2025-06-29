@@ -12,7 +12,7 @@ const HotelsGrid: React.FC<HotelsGridProps> = ({ hotels, onBook }) => {
   return (
     <Grid container spacing={3}>
       {hotels.map((hotel) => (
-        <Grid item xs={12} sm={6} md={4} key={hotel.id}>
+        <Grid item xs={36} sm={24} md={12} key={hotel.id}>
           <HotelCard hotel={hotel} onBook={onBook} />
         </Grid>
       ))}

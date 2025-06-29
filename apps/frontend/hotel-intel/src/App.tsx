@@ -23,7 +23,7 @@ function App() {
     <ApolloProvider client={client}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
+        <Router basename="/hotel-intel-mvp">
           <AppLayout>
             <Routes>
               <Route path="/" element={<DashboardPage />} />
