@@ -14,33 +14,34 @@ export class ScraperPuppeteerService {
   private browser: puppeteer.Browser | null = null;
 
   /**
-   * Initialize Puppeteer browser with Render-compatible settings
+   * Initialize Puppeteer browser with minimal settings
    */
   private async getBrowser(): Promise<puppeteer.Browser> {
     if (!this.browser) {
-      this.logger.log('🚀 Initializing Puppeteer browser...');
+      this.logger.log('🚀 Initializing Puppeteer browser for Render...');
       
       this.browser = await puppeteer.launch({
-        headless: true,
+        headless: 'new', // Use new headless mode for better performance
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
           '--disable-gpu',
           '--disable-background-timer-throttling',
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding',
-          '--disable-features=TranslateUI',
-          '--disable-ipc-flooding-protection',
+          '--disable-extensions',
+          '--disable-plugins',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--no-zygote',
+          '--memory-pressure-off',
         ],
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+        timeout: 30000, // Reduced timeout for faster startup
       });
       
-      this.logger.log('✅ Puppeteer browser initialized');
+      this.logger.log('✅ Puppeteer browser initialized for Render');
     }
     return this.browser;
   }
@@ -49,79 +50,110 @@ export class ScraperPuppeteerService {
    * Extract pricing data using Puppeteer to simulate browser interaction
    */
   private async extractPricingWithPuppeteer(url: string): Promise<PricingData[]> {
-    this.logger.log(`🔍 Extracting pricing data using Puppeteer...`);
+    this.logger.log(`🔍 Extracting pricing data using Puppeteer (Render optimized)...`);
     
     const browser = await this.getBrowser();
     const page = await browser.newPage();
     
-    try {
-      // Set viewport and user agent
-      await page.setViewport({ width: 1280, height: 720 });
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-
-      // Navigate to the hotel page
-      this.logger.log(`📄 Navigating to hotel page...`);
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-
-      // Wait for the page to load completely
-      await page.waitForTimeout(2000);
-
-      // Try to find and click on date selector to trigger GraphQL request
-      this.logger.log(`📅 Looking for date selector...`);
-      
-      // Look for common date selector patterns
-      const dateSelectors = [
-        '[data-testid="date-display-field-start"]',
-        '.date-display-field-start',
-        '.checkin-date',
-        '[data-testid="checkin"]',
-        '.checkin',
-        'input[placeholder*="Check-in"]',
-        'input[placeholder*="Arrival"]'
-      ];
-
-      let dateSelectorFound = false;
-      for (const selector of dateSelectors) {
+    // Listen for GraphQL requests BEFORE navigation
+    const graphqlRequests: any[] = [];
+    
+    // Listen to requests (outgoing)
+    page.on('request', (request) => {
+      const requestUrl = request.url();
+      if (requestUrl.includes('/dml/graphql')) {
+        this.logger.log(`📤 GraphQL request sent: ${requestUrl}`);
+      }
+    });
+    
+    // Listen to responses (incoming)
+    page.on('response', async (response) => {
+      const responseUrl = response.url();
+      if (responseUrl.includes('/dml/graphql')) {
         try {
-          const element = await page.$(selector);
-          if (element) {
-            this.logger.log(`✅ Found date selector: ${selector}`);
-            await element.click();
-            await page.waitForTimeout(1000);
-            dateSelectorFound = true;
-            break;
+          this.logger.log(`📡 Intercepted GraphQL response: ${responseUrl}`);
+          const responseData = await response.json();
+          graphqlRequests.push({
+            url: responseUrl,
+            data: responseData,
+            status: response.status()
+          });
+          this.logger.log(`📊 GraphQL response status: ${response.status()}`);
+          if (responseData.data?.availabilityCalendar?.days) {
+            this.logger.log(`📊 Days found: ${responseData.data.availabilityCalendar.days.length}`);
           }
         } catch (e) {
-          // Continue to next selector
+          this.logger.warn(`⚠️ Error parsing GraphQL response: ${e.message}`);
         }
       }
+    });
+    
+    try {
+      // Set viewport and user agent for Render
+      await page.setViewport({ width: 1280, height: 720 });
+      await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
-      if (!dateSelectorFound) {
-        this.logger.log(`⚠️ No date selector found, proceeding with page analysis...`);
-      }
+      // Navigate to the hotel page with reduced timeout
+      this.logger.log(`📄 Navigating to hotel page...`);
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
-      // Listen for GraphQL requests
-      const graphqlRequests: any[] = [];
-      page.on('response', async (response) => {
-        const url = response.url();
-        if (url.includes('/dml/graphql')) {
-          try {
-            const responseData = await response.json();
-            graphqlRequests.push({
-              url,
-              data: responseData,
-              status: response.status()
-            });
-            this.logger.log(`📡 Intercepted GraphQL request: ${url}`);
-          } catch (e) {
-            // Response might not be JSON
-          }
-        }
-      });
-
-      // Wait a bit more for any GraphQL requests to complete
+      // Wait for the page to load (reduced time)
+      this.logger.log('⏳ Waiting 3 seconds for page to load...');
       await page.waitForTimeout(3000);
 
+      // Try to find and click on date selector
+      this.logger.log('📅 Looking for date selectors...');
+      
+      // Simple approach: just look for the date-display-field-start
+      const targetSelector = '[data-testid="date-display-field-start"]';
+      this.logger.log(`🔍 Looking for: ${targetSelector}`);
+      
+      try {
+        const elements = await page.$$(targetSelector);
+        this.logger.log(`📊 Found ${elements.length} elements with data-testid="date-display-field-start"`);
+        
+        if (elements.length >= 2) {
+          this.logger.log('✅ Found at least 2 elements, clicking on the second one (index 1)');
+          await elements[1].click();
+          this.logger.log('✅ Clicked on second element successfully');
+          this.logger.log('⏳ Waiting 1 second after click...');
+          await page.waitForTimeout(1000);
+        } else if (elements.length === 1) {
+          this.logger.log('⚠️ Found only 1 element, clicking on it');
+          await elements[0].click();
+          this.logger.log('✅ Clicked on first element successfully');
+          this.logger.log('⏳ Waiting 1 second after click...');
+          await page.waitForTimeout(1000);
+        } else {
+          this.logger.log('❌ No date-display-field-start elements found!');
+          throw new Error('No date selector found');
+        }
+      } catch (e) {
+        this.logger.warn(`❌ Error with date selector: ${e.message}`);
+        throw e;
+      }
+
+      // Wait for GraphQL requests (reduced time)
+      this.logger.log('⏳ Waiting 4 seconds for GraphQL requests...');
+      await page.waitForTimeout(4000);
+
+      this.logger.log(`📊 Total GraphQL requests intercepted: ${graphqlRequests.length}`);
+      
+      // Show what we found
+      if (graphqlRequests.length > 0) {
+        this.logger.log('🎉 GraphQL requests found!');
+        graphqlRequests.forEach((req, index) => {
+          this.logger.log(`Request ${index + 1}:`);
+          this.logger.log(`  URL: ${req.url}`);
+          this.logger.log(`  Status: ${req.status}`);
+          if (req.data?.data?.availabilityCalendar?.days) {
+            this.logger.log(`  Days found: ${req.data.data.availabilityCalendar.days.length}`);
+          }
+        });
+      } else {
+        this.logger.log('❌ No GraphQL requests found');
+      }
+      
       // Extract pricing data from GraphQL responses
       const pricing: PricingData[] = [];
       
@@ -234,17 +266,17 @@ export class ScraperPuppeteerService {
    * Extract hotel details using Puppeteer
    */
   private async extractHotelDetailsWithPuppeteer(url: string): Promise<HotelData> {
-    this.logger.log(`🏨 Extracting hotel details with Puppeteer...`);
+    this.logger.log(`🏨 Extracting hotel details with Puppeteer (Render optimized)...`);
     
     const browser = await this.getBrowser();
     const page = await browser.newPage();
     
     try {
       await page.setViewport({ width: 1280, height: 720 });
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+      await page.setUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-      await page.waitForTimeout(2000);
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 });
+      await page.waitForTimeout(3000);
 
       const hotelData = await page.evaluate(() => {
         // Extract hotel name
@@ -482,9 +514,14 @@ export class ScraperPuppeteerService {
 
   async onModuleDestroy() {
     if (this.browser) {
-      this.logger.log('🔄 Closing Puppeteer browser...');
-      await this.browser.close();
-      this.browser = null;
+      try {
+        this.logger.log('🔄 Closing Puppeteer browser...');
+        await this.browser.close();
+        this.browser = null;
+        this.logger.log('✅ Puppeteer browser closed successfully');
+      } catch (error) {
+        this.logger.error(`❌ Error closing Puppeteer browser: ${error.message}`);
+      }
     }
   }
 } 

@@ -9,6 +9,7 @@
         "start:prod": "node dist/main.js",
         "build": "tsc -p tsconfig.json",
         "dev": "nest start --watch",
+        "debug:puppeteer": "ts-node debug-puppeteer.ts",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate dev",
         "prisma:deploy": "prisma migrate deploy"
