@@ -75,6 +75,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           width: { md: `calc(100% - 280px)` },
           minHeight: '100vh',
           backgroundColor: 'grey.50',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          '& > *': {
+            width: '100%',
+            maxWidth: '1200px',
+          }
         }}
       >
         <Toolbar />
