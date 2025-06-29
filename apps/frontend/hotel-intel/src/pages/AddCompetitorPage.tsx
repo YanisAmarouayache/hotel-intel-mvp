@@ -14,46 +14,59 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useMutation } from '@apollo/client';
+import { CREATE_HOTEL } from '../graphql/queries';
 
 const addCompetitorSchema = z.object({
-  bookingUrl: z
+  name: z.string().min(1, 'Le nom de l\'hôtel est requis'),
+  url: z
     .string()
     .min(1, 'L\'URL est requise')
-    .url('Veuillez entrer une URL valide')
-    .refine((url) => url.includes('booking.com'), {
-      message: 'L\'URL doit être une URL Booking.com valide',
-    }),
-  hotelName: z.string().min(1, 'Le nom de l\'hôtel est requis'),
+    .url('Veuillez entrer une URL valide'),
   city: z.string().min(1, 'La ville est requise'),
-  notes: z.string().optional(),
+  address: z.string().optional(),
+  description: z.string().optional(),
 });
 
 type AddCompetitorForm = z.infer<typeof addCompetitorSchema>;
 
 const AddCompetitorPage: React.FC = () => {
+  const [createHotel, { loading: isSubmitting }] = useMutation(CREATE_HOTEL);
+
   const {
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
   } = useForm<AddCompetitorForm>({
     resolver: zodResolver(addCompetitorSchema),
     defaultValues: {
-      bookingUrl: '',
-      hotelName: '',
+      name: '',
+      url: '',
       city: '',
-      notes: '',
+      address: '',
+      description: '',
     },
   });
 
   const onSubmit = async (data: AddCompetitorForm) => {
     try {
-      console.log('Données du formulaire:', data);
-      // TODO: Appel API pour ajouter le compétiteur
+      await createHotel({
+        variables: {
+          name: data.name,
+          url: data.url,
+          city: data.city,
+          address: data.address || undefined,
+          description: data.description || undefined,
+          isCompetitor: true, // Par défaut, c'est un compétiteur
+        },
+      });
+      
       alert('Compétiteur ajouté avec succès!');
       reset();
     } catch (error) {
       console.error('Erreur lors de l\'ajout:', error);
+      alert('Erreur lors de l\'ajout du compétiteur');
     }
   };
 
@@ -64,7 +77,7 @@ const AddCompetitorPage: React.FC = () => {
       </Typography>
       
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Ajoutez un hôtel concurrent en fournissant son URL Booking.com
+        Ajoutez un hôtel concurrent en fournissant ses informations
       </Typography>
 
       <Grid container spacing={4}>
@@ -77,24 +90,7 @@ const AddCompetitorPage: React.FC = () => {
             
             <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ mt: 2 }}>
               <Controller
-                name="bookingUrl"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="URL Booking.com"
-                    placeholder="https://www.booking.com/hotel/..."
-                    fullWidth
-                    margin="normal"
-                    error={!!errors.bookingUrl}
-                    helperText={errors.bookingUrl?.message}
-                    disabled={isSubmitting}
-                  />
-                )}
-              />
-
-              <Controller
-                name="hotelName"
+                name="name"
                 control={control}
                 render={({ field }) => (
                   <TextField
@@ -102,8 +98,25 @@ const AddCompetitorPage: React.FC = () => {
                     label="Nom de l'hôtel"
                     fullWidth
                     margin="normal"
-                    error={!!errors.hotelName}
-                    helperText={errors.hotelName?.message}
+                    error={!!errors.name}
+                    helperText={errors.name?.message}
+                    disabled={isSubmitting}
+                  />
+                )}
+              />
+
+              <Controller
+                name="url"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="URL de l'hôtel"
+                    placeholder="https://www.booking.com/hotel/..."
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.url}
+                    helperText={errors.url?.message}
                     disabled={isSubmitting}
                   />
                 )}
@@ -126,12 +139,26 @@ const AddCompetitorPage: React.FC = () => {
               />
 
               <Controller
-                name="notes"
+                name="address"
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Notes (optionnel)"
+                    label="Adresse (optionnel)"
+                    fullWidth
+                    margin="normal"
+                    disabled={isSubmitting}
+                  />
+                )}
+              />
+
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Description (optionnel)"
                     fullWidth
                     margin="normal"
                     multiline
@@ -173,7 +200,7 @@ const AddCompetitorPage: React.FC = () => {
               
               <Box component="ul" sx={{ pl: 2 }}>
                 <Typography component="li" variant="body2" sx={{ mb: 1 }}>
-                  Prix actuels (J+3, J+7, etc.)
+                  Prix quotidiens (J+3, J+7, etc.)
                 </Typography>
                 <Typography component="li" variant="body2" sx={{ mb: 1 }}>
                   Note et étoiles de l'hôtel

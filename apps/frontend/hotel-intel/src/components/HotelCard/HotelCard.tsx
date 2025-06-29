@@ -8,16 +8,10 @@ import {
   Button,
 } from '@mui/material';
 import { LocationOn, Euro, CalendarToday } from '@mui/icons-material';
+import type { Hotel } from '../../types';
 
 interface HotelCardProps {
-  hotel: {
-    id: number;
-    name: string;
-    city: string;
-    price: number;
-    createdAt: string;
-    updatedAt: string;
-  };
+  hotel: Hotel;
   onBook?: (hotelId: number) => void;
 }
 
@@ -25,6 +19,22 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onBook }) => {
   const handleBookClick = () => {
     onBook?.(hotel.id);
   };
+
+  // Obtenir le prix le plus récent
+  const getLatestPrice = () => {
+    if (!hotel.dailyPrices || hotel.dailyPrices.length === 0) {
+      return null;
+    }
+    
+    // Trier par date et prendre le plus récent
+    const sortedPrices = [...hotel.dailyPrices].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    return sortedPrices[0];
+  };
+
+  const latestPrice = getLatestPrice();
 
   return (
     <Card 
@@ -59,16 +69,35 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onBook }) => {
           </Typography>
         </Box>
         
-        <Box display="flex" alignItems="center" mb={2}>
-          <Euro color="success" sx={{ mr: 1, fontSize: 20 }} />
-          <Typography 
-            variant="h6" 
-            color="success.main"
-            sx={{ fontWeight: 700 }}
-          >
-            {hotel.price.toFixed(2)} €
-          </Typography>
-        </Box>
+        {latestPrice ? (
+          <Box display="flex" alignItems="center" mb={2}>
+            <Euro color="success" sx={{ mr: 1, fontSize: 20 }} />
+            <Typography 
+              variant="h6" 
+              color="success.main"
+              sx={{ fontWeight: 700 }}
+            >
+              {latestPrice.price.toFixed(2)} {latestPrice.currency}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              color="text.secondary"
+              sx={{ ml: 1 }}
+            >
+              ({new Date(latestPrice.date).toLocaleDateString('fr-FR')})
+            </Typography>
+          </Box>
+        ) : (
+          <Box display="flex" alignItems="center" mb={2}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{ fontStyle: 'italic' }}
+            >
+              Aucun prix disponible
+            </Typography>
+          </Box>
+        )}
         
         <Box 
           sx={{ 

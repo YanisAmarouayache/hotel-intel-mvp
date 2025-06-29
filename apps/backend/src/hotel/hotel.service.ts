@@ -8,6 +8,18 @@ export class HotelService {
 
   async findAll(): Promise<Hotel[]> {
     return this.prisma.hotel.findMany({
+      include: {
+        dailyPrices: {
+          orderBy: {
+            date: 'asc',
+          },
+        },
+        roomCategories: {
+          orderBy: {
+            name: 'asc',
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -17,6 +29,18 @@ export class HotelService {
   async findOne(id: number): Promise<Hotel | null> {
     return this.prisma.hotel.findUnique({
       where: { id },
+      include: {
+        dailyPrices: {
+          orderBy: {
+            date: 'asc',
+          },
+        },
+        roomCategories: {
+          orderBy: {
+            name: 'asc',
+          },
+        },
+      },
     });
   }
 
@@ -40,6 +64,10 @@ export class HotelService {
         amenities: data.amenities ?? [],
         images: data.images ?? []
       },
+      include: {
+        dailyPrices: true,
+        roomCategories: true,
+      },
     });
   }
 
@@ -59,12 +87,20 @@ export class HotelService {
     return this.prisma.hotel.update({
       where: { id },
       data,
+      include: {
+        dailyPrices: true,
+        roomCategories: true,
+      },
     });
   }
 
   async delete(id: number): Promise<Hotel> {
     return this.prisma.hotel.delete({
       where: { id },
+      include: {
+        dailyPrices: true,
+        roomCategories: true,
+      },
     });
   }
 } 

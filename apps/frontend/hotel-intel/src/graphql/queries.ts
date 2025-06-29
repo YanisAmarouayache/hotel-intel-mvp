@@ -6,7 +6,28 @@ export const GET_HOTELS = gql`
       id
       name
       city
-      price
+      address
+      starRating
+      userRating
+      reviewCount
+      description
+      amenities
+      images
+      isCompetitor
+      dailyPrices {
+        id
+        date
+        price
+        currency
+        availability
+        roomCategoryId
+        scrapedAt
+      }
+      roomCategories {
+        id
+        name
+        description
+      }
       createdAt
       updatedAt
     }
@@ -19,7 +40,28 @@ export const GET_HOTEL = gql`
       id
       name
       city
-      price
+      address
+      starRating
+      userRating
+      reviewCount
+      description
+      amenities
+      images
+      isCompetitor
+      dailyPrices {
+        id
+        date
+        price
+        currency
+        availability
+        roomCategoryId
+        scrapedAt
+      }
+      roomCategories {
+        id
+        name
+        description
+      }
       createdAt
       updatedAt
     }
@@ -27,12 +69,57 @@ export const GET_HOTEL = gql`
 `;
 
 export const CREATE_HOTEL = gql`
-  mutation CreateHotel($name: String!, $city: String!, $price: Float!) {
-    createHotel(name: $name, city: $city, price: $price) {
+  mutation CreateHotel(
+    $name: String!, 
+    $url: String!, 
+    $city: String!, 
+    $address: String, 
+    $starRating: Float, 
+    $userRating: Float, 
+    $reviewCount: Int, 
+    $description: String, 
+    $amenities: [String!], 
+    $images: [String!], 
+    $isCompetitor: Boolean
+  ) {
+    createHotel(
+      name: $name, 
+      url: $url, 
+      city: $city, 
+      address: $address, 
+      starRating: $starRating, 
+      userRating: $userRating, 
+      reviewCount: $reviewCount, 
+      description: $description, 
+      amenities: $amenities, 
+      images: $images, 
+      isCompetitor: $isCompetitor
+    ) {
       id
       name
       city
-      price
+      address
+      starRating
+      userRating
+      reviewCount
+      description
+      amenities
+      images
+      isCompetitor
+      dailyPrices {
+        id
+        date
+        price
+        currency
+        availability
+        roomCategoryId
+        scrapedAt
+      }
+      roomCategories {
+        id
+        name
+        description
+      }
       createdAt
       updatedAt
     }
@@ -40,12 +127,59 @@ export const CREATE_HOTEL = gql`
 `;
 
 export const UPDATE_HOTEL = gql`
-  mutation UpdateHotel($id: Int!, $name: String, $city: String, $price: Float) {
-    updateHotel(id: $id, name: $name, city: $city, price: $price) {
+  mutation UpdateHotel(
+    $id: Int!, 
+    $name: String, 
+    $url: String, 
+    $city: String, 
+    $address: String, 
+    $starRating: Float, 
+    $userRating: Float, 
+    $reviewCount: Int, 
+    $description: String, 
+    $amenities: [String!], 
+    $images: [String!], 
+    $isCompetitor: Boolean
+  ) {
+    updateHotel(
+      id: $id, 
+      name: $name, 
+      url: $url, 
+      city: $city, 
+      address: $address, 
+      starRating: $starRating, 
+      userRating: $userRating, 
+      reviewCount: $reviewCount, 
+      description: $description, 
+      amenities: $amenities, 
+      images: $images, 
+      isCompetitor: $isCompetitor
+    ) {
       id
       name
       city
-      price
+      address
+      starRating
+      userRating
+      reviewCount
+      description
+      amenities
+      images
+      isCompetitor
+      dailyPrices {
+        id
+        date
+        price
+        currency
+        availability
+        roomCategoryId
+        scrapedAt
+      }
+      roomCategories {
+        id
+        name
+        description
+      }
       createdAt
       updatedAt
     }

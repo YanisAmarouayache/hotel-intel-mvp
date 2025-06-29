@@ -86,6 +86,12 @@ export class Hotel {
   @Field()
   isCompetitor: boolean;
 
+  @Field(() => [DailyPrice], { nullable: true })
+  dailyPrices?: DailyPrice[];
+
+  @Field(() => [RoomCategory], { nullable: true })
+  roomCategories?: RoomCategory[];
+
   @Field()
   createdAt: Date;
 
