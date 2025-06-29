@@ -9,7 +9,7 @@ npm install
 
 # Install Puppeteer Chrome browser for Render
 echo "🔧 Installing Puppeteer Chrome browser..."
-npx puppeteer browsers install chrome
+npx puppeteer browsers install chrome --unsafe-perm=true 
 
 # Find Chrome executable
 echo "🔍 Looking for Chrome executable..."
