@@ -3,24 +3,33 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'fs';
+import * as https from 'https';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  
-  // Configuration CORS spécifique pour GitHub Pages et appareils mobiles
+  const httpsOptions = {
+    key: fs.readFileSync('./ssl/server.key'),
+    cert: fs.readFileSync('./ssl/server.cert'),
+  };
+
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions,
+  });
+
   app.enableCors({
     origin: [
       'https://yanisamarouayache.github.io',
       'http://localhost:5173',
       'http://localhost:3000',
       'http://88.160.195.103:3000',
-      'http://88.160.195.103:18080'
+      'http://88.160.195.103:18080',
+      'https://88.160.195.103', // <-- pour le HTTPS !
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
   });
-  
+
   app.useGlobalPipes(new ValidationPipe());
 
   const config = new DocumentBuilder()
@@ -28,9 +37,10 @@ async function bootstrap() {
     .setDescription('API de scraping et monitoring hôtelier')
     .setVersion('1.0')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(16443); // HTTPS standard port
 }
 bootstrap();

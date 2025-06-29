@@ -146,3 +146,5 @@ pnpm-lock.yaml
 apps/**/dist
 apps/**/.next
 apps/**/build
+apps/backend/ssl/server.cert
+apps/backend/ssl/server.key
