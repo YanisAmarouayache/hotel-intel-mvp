@@ -18,10 +18,10 @@ if [ -d "dist" ]; then
     echo "📁 Contents of dist/:"
     ls -la dist/
     
-    if [ -f "dist/main.js" ]; then
-        echo "✅ main.js found in dist/"
+    if [ -f "dist/src/main.js" ]; then
+        echo "✅ main.js found in dist/src/"
     else
-        echo "❌ main.js NOT found in dist/"
+        echo "❌ main.js NOT found in dist/src/"
         echo "📁 Available files in dist/:"
         find dist/ -type f -name "*.js" | head -10
         exit 1
