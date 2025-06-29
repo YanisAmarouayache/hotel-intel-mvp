@@ -1,35 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import { ApolloProvider } from '@apollo/client';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { client } from './lib/apollo';
+import { AppLayout } from './components/Layout';
+import { theme } from './constants/theme';
+import DashboardPage from './pages/DashboardPage';
+import HotelsPage from './pages/HotelsPage';
+import AddCompetitorPage from './pages/AddCompetitorPage';
+
+// Pages temporaires pour les routes non implémentées
+const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
+  <div style={{ padding: '2rem', textAlign: 'center' }}>
+    <h2>{title}</h2>
+    <p>Page en cours de développement...</p>
+  </div>
+);
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more test deploy
-      </p>
-    </>
-  )
+    <ApolloProvider client={client}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router basename="/hotel-intel-mvp">
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<DashboardPage />} />
+              <Route path="/my-hotels" element={<HotelsPage />} />
+              <Route path="/add-competitor" element={<AddCompetitorPage />} />
+              <Route 
+                path="/competitor-analysis" 
+                element={<PlaceholderPage title="Analyse Concurrentielle" />} 
+              />
+              <Route 
+                path="/price-evolution" 
+                element={<PlaceholderPage title="Évolution des Prix" />} 
+              />
+              <Route 
+                path="/yield-strategy" 
+                element={<PlaceholderPage title="Stratégie de Yield" />} 
+              />
+              <Route 
+                path="/events" 
+                element={<PlaceholderPage title="Événements" />} 
+              />
+              <Route 
+                path="/criteria-weights" 
+                element={<PlaceholderPage title="Critères & Saisons" />} 
+              />
+              <Route 
+                path="/settings" 
+                element={<PlaceholderPage title="Paramètres" />} 
+              />
+            </Routes>
+          </AppLayout>
+        </Router>
+      </ThemeProvider>
+    </ApolloProvider>
+  );
 }
 
-export default App
+export default App;
