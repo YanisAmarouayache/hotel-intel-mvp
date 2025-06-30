@@ -1,0 +1,1 @@
+export { default as AddMyHotelPage } from './AddMyHotelPage'; 
