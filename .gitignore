@@ -148,3 +148,5 @@ apps/**/.next
 apps/**/build
 apps/backend/ssl/server.cert
 apps/backend/ssl/server.key
+apps/backend/src/ssl/server.cert
+apps/backend/src/ssl/server.key
