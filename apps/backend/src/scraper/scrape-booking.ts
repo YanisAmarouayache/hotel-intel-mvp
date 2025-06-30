@@ -49,17 +49,37 @@ async function scrapeBooking(url: string) {
   }
   console.log('Review count:', reviewCount);
 
-  // Address
-  let address = $('span[data-testid="address"]').first().text().trim();
+  // Address (chemin exact demandé, contenu direct de la div)
+  let address = '';
+  const addressWrapper = $('[data-testid="PropertyHeaderAddressDesktop-wrapper"]');
+  if (addressWrapper.length) {
+    const firstChild = addressWrapper.children().eq(0);
+    const secondChild = firstChild.children().eq(1);
+    const firstChild2 = secondChild.children().eq(0);
+    const firstChild3 = firstChild2.children().eq(0);
+    // Récupérer le contenu direct de la div (pas le texte de ses enfants)
+    address = firstChild3.contents().filter(function() { return this.type === 'text'; }).text().trim();
+  }
+  // Fallbacks si rien trouvé
+  if (!address) address = $('span[data-testid="address"]').first().text().trim();
   if (!address) address = $('.hp_address_subtitle').first().text().trim();
   if (!address) address = $('main div button[data-testid="address-link"] div').first().text().trim();
   console.log('Address:', address);
 
-  // City (from address)
+  // City (extraction combinée)
   let city = '';
   if (address) {
-    const match = address.match(/([0-9]{5})?\s*([A-Za-zÀ-ÿ\-\s]+)/);
-    city = match ? match[2].trim() : '';
+    // 1. Regex code postal + ville (France)
+    let match = address.match(/([0-9]{5})\s*([A-Za-zÀ-ÿ\-\s]+)/);
+    if (match) {
+      city = match[2].trim();
+    } else {
+      // 2. Dernier segment après la dernière virgule
+      const parts = address.split(',');
+      if (parts.length > 1) {
+        city = parts[parts.length - 1].trim();
+      }
+    }
   }
   console.log('City:', city);
 
@@ -77,10 +97,27 @@ async function scrapeBooking(url: string) {
 
   // Amenities
   const amenities: string[] = [];
-  $('div[data-testid="facility-group-container"] li.bui-list__description').each((_, el) => {
-    const text = $(el).text().trim();
-    if (text) amenities.push(text);
-  });
+  const propertySectionContent = $('[data-testid="property-section--content"]');
+  if (propertySectionContent.length) {
+    propertySectionContent.find('[data-testid="facility-icon"]').each((_, el) => {
+      // Trouver la div qui suit ce span
+      const nextDiv = $(el).next('div');
+      if (nextDiv.length) {
+        // Chercher les enfants de cette div
+        nextDiv.children().each((_, childEl) => {
+          const text = $(childEl).text().trim();
+          if (text) amenities.push(text);
+        });
+      }
+    });
+  }
+  // Fallback si rien trouvé
+  if (amenities.length === 0) {
+    $('div[data-testid="facility-group-container"] li.bui-list__description').each((_, el) => {
+      const text = $(el).text().trim();
+      if (text) amenities.push(text);
+    });
+  }
   if (amenities.length === 0) {
     $('[data-testid="facilities-list"] li, .hotel-facilities__list li, .bui-list__item').each((_, el) => {
       const text = $(el).text().trim();
