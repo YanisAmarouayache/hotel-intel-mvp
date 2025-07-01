@@ -31,7 +31,7 @@ import { useMutation } from '@apollo/client';
 import { CREATE_HOTEL } from '../graphql/queries';
 
 const addMyHotelSchema = z.object({
-  name: z.string().min(1, 'Le nom de votre hôtel est requis'),
+  name: z.string().optional(),
   url: z
     .string()
     .min(1, 'L\'URL Booking.com est requise')
@@ -39,7 +39,7 @@ const addMyHotelSchema = z.object({
     .refine((url) => url.includes('booking.com'), {
       message: 'Veuillez entrer une URL Booking.com valide',
     }),
-  city: z.string().min(1, 'La ville est requise'),
+  city: z.string().optional(),
   address: z.string().optional(),
   description: z.string().optional(),
 });
@@ -88,38 +88,43 @@ const AddMyHotelPage: React.FC = () => {
 
   const watchedUrl = watch('url');
 
-  // Auto-scrape Booking.com URL
-  useEffect(() => {
-    const fetchData = async () => {
-      setScrapeError(null);
-      setIsVerifying(true);
+  // Fonction de scraping
+  const scrapeHotelData = async (url: string) => {
+    if (!url || !url.includes('booking.com')) return;
+    
+    setScrapeError(null);
+    setIsVerifying(true);
+    setExtractedData(null);
+    setActiveStep(1);
+    
+    try {
+      console.log('Scraping URL:', url);
+      const apiUrl = `http://localhost:3000/scraper/scrapmyhotelfrombooking?url=${encodeURIComponent(url)}`;
+      console.log('API endpoint:', apiUrl);
+      
+      const res = await fetch(apiUrl);
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      
+      console.log('Données extraites:', data);
+      console.log('Nom extrait:', data.name);
+      console.log('Ville extraite:', data.city);
+      
+      setExtractedData(data);
+      // Pré-remplir les champs du formulaire
+      if (data.name) setValue('name', data.name);
+      if (data.city) setValue('city', data.city);
+      if (data.address) setValue('address', data.address);
+      // description: laissé à l'utilisateur
+      setActiveStep(2);
+    } catch (e: any) {
+      setScrapeError(e.message || 'Erreur lors du scraping');
       setExtractedData(null);
-      try {
-        const base = import.meta.env.BASE_URL || '/';
-        const res = await fetch(`${base}api/scrape-booking?url=${encodeURIComponent(watchedUrl)}`);
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        setExtractedData(data);
-        // Pré-remplir les champs du formulaire
-        if (data.name) setValue('name', data.name);
-        if (data.city) setValue('city', data.city);
-        if (data.address) setValue('address', data.address);
-        // description: laissé à l'utilisateur
-        setActiveStep(2);
-      } catch (e: any) {
-        setScrapeError(e.message || 'Erreur lors du scraping');
-        setExtractedData(null);
-        setActiveStep(0);
-      } finally {
-        setIsVerifying(false);
-      }
-    };
-    if (watchedUrl && watchedUrl.includes('booking.com')) {
-      setActiveStep(1);
-      fetchData();
+      setActiveStep(0);
+    } finally {
+      setIsVerifying(false);
     }
-    // eslint-disable-next-line
-  }, [watchedUrl, setValue]);
+  };
 
   const handleUrlVerification = async (url: string) => {
     // plus utilisé, scraping auto via useEffect
@@ -127,13 +132,28 @@ const AddMyHotelPage: React.FC = () => {
 
   const onSubmit = async (data: AddMyHotelForm) => {
     try {
+      console.log('Données du formulaire:', data);
+      console.log('Données extraites disponibles:', extractedData);
+      
+      // Utiliser les données extraites si les champs sont vides
+      const hotelName = data.name || extractedData?.name;
+      const hotelCity = data.city || extractedData?.city;
+      
+      console.log('Nom final:', hotelName);
+      console.log('Ville finale:', hotelCity);
+      
       await createHotel({
         variables: {
-          name: data.name,
+          name: hotelName,
           url: data.url,
-          city: data.city,
-          address: data.address || undefined,
+          city: hotelCity,
+          address: data.address || extractedData?.address || undefined,
           description: data.description || undefined,
+          starRating: extractedData?.starRating || undefined,
+          userRating: extractedData?.userRating ? parseFloat(extractedData.userRating) : undefined,
+          reviewCount: extractedData?.reviewCount || undefined,
+          amenities: extractedData?.amenities || [],
+          images: extractedData?.images || [],
           isCompetitor: false, // C'est votre hôtel, pas un compétiteur
         },
       });
@@ -219,6 +239,12 @@ const AddMyHotelPage: React.FC = () => {
                       (isBookingUrl ? 'URL Booking.com valide détectée' : '')
                     }
                     disabled={isSubmitting || isVerifying}
+                    onBlur={(e) => {
+                      field.onBlur();
+                      if (e.target.value && e.target.value.includes('booking.com')) {
+                        scrapeHotelData(e.target.value);
+                      }
+                    }}
                     InputProps={{
                       startAdornment: <Link sx={{ mr: 1, color: 'text.secondary' }} />,
                     }}
@@ -244,11 +270,12 @@ const AddMyHotelPage: React.FC = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Nom de votre hôtel"
+                    label="Nom de votre hôtel (optionnel - extrait automatiquement)"
+                    placeholder="Sera extrait automatiquement de Booking.com"
                     fullWidth
                     margin="normal"
                     error={!!errors.name}
-                    helperText={errors.name?.message}
+                    helperText={errors.name?.message || "Laissez vide pour utiliser le nom extrait automatiquement"}
                     disabled={isSubmitting || isVerifying}
                   />
                 )}
@@ -260,11 +287,12 @@ const AddMyHotelPage: React.FC = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Ville"
+                    label="Ville (optionnelle - extraite automatiquement)"
+                    placeholder="Sera extraite automatiquement de Booking.com"
                     fullWidth
                     margin="normal"
                     error={!!errors.city}
-                    helperText={errors.city?.message}
+                    helperText={errors.city?.message || "Laissez vide pour utiliser la ville extraite automatiquement"}
                     disabled={isSubmitting || isVerifying}
                   />
                 )}
@@ -429,6 +457,33 @@ const AddMyHotelPage: React.FC = () => {
               </Box>
             </Grid>
           </Grid>
+
+          {/* Images extraites */}
+          {extractedData.images && extractedData.images.length > 0 && (
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
+                Images extraites ({extractedData.images.length})
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', pb: 1 }}>
+                {extractedData.images.map((image: string, index: number) => (
+                  <Box
+                    key={index}
+                    component="img"
+                    src={image}
+                    alt={`Image ${index + 1}`}
+                    sx={{
+                      width: 120,
+                      height: 80,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
         </Paper>
       )}
     </Box>
