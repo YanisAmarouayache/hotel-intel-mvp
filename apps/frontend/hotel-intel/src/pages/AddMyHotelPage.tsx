@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import GenericDialog from '../components/Dialog/GenericDialog';
 import {
   Box,
@@ -16,7 +16,6 @@ import {
   StepLabel,
   StepContent,
   Chip,
-  Divider,
 } from '@mui/material';
 import {
   Hotel,
@@ -71,6 +70,8 @@ const AddMyHotelPage: React.FC = () => {
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState('');
+  const [showRetry, setShowRetry] = useState(false);
+  const lastScrapeUrl = useRef<string | null>(null);
 
   const {
     control,
@@ -95,44 +96,68 @@ const AddMyHotelPage: React.FC = () => {
   // Fonction de scraping
   const scrapeHotelData = async (url: string) => {
     if (!url || !url.includes('booking.com')) return;
-    
     setScrapeError(null);
     setIsVerifying(true);
     setExtractedData(null);
     setActiveStep(1);
-    
+    setShowRetry(false);
+    lastScrapeUrl.current = url;
     try {
-      console.log('Scraping URL:', url);
       const apiUrl = `http://localhost:3000/scraper/scrapmyhotelfrombooking?url=${encodeURIComponent(url)}`;
-      console.log('API endpoint:', apiUrl);
-      
       const res = await fetch(apiUrl);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      
-      console.log('Données extraites:', data);
-      console.log('Nom extrait:', data.name);
-      console.log('Ville extraite:', data.city);
-      
+
+      // Vérification de scraping vide ou incomplet
+      const isEmpty =
+        (!data.name || data.name.trim() === '') &&
+        (!data.city || data.city.trim() === '') &&
+        (!data.address || data.address.trim() === '') &&
+        (!data.userRating || data.userRating === 0 || data.userRating === '0') &&
+        (!data.starRating || data.starRating === 0 || data.starRating === '0') &&
+        (!data.reviewCount || data.reviewCount === 0 || data.reviewCount === '0') &&
+        (!data.amenities || data.amenities.length === 0) &&
+        (!data.images || data.images.length === 0);
+
+      if (isEmpty) {
+        setExtractedData(null);
+        setActiveStep(0);
+        setShowRetry(false);
+        setTimeout(() => {
+          setScrapeError("Aucune donnée exploitable n'a pu être extraite. Merci de vérifier l'URL ou de réessayer.");
+          setShowRetry(true);
+        }, 3000);
+        return;
+      }
+
       setExtractedData(data);
-      // Pré-remplir les champs du formulaire
-      if (data.name) setValue('name', data.name);
+      // Nettoyer le nom de l'hôtel : retirer tout après la virgule (incluse)
+      if (data.name) {
+        const cleanName = data.name.split(',')[0].trim();
+        setValue('name', cleanName);
+      }
       if (data.city) setValue('city', data.city);
       if (data.address) setValue('address', data.address);
-      // description: laissé à l'utilisateur
       setActiveStep(2);
+      setShowRetry(false);
     } catch (e: any) {
       setScrapeError(e.message || 'Erreur lors du scraping');
       setExtractedData(null);
       setActiveStep(0);
+      setShowRetry(false);
+      setTimeout(() => setShowRetry(true), 3000);
     } finally {
       setIsVerifying(false);
     }
   };
 
-  const handleUrlVerification = async (url: string) => {
-    // plus utilisé, scraping auto via useEffect
+  const handleRetryScrape = () => {
+    if (lastScrapeUrl.current) {
+      scrapeHotelData(lastScrapeUrl.current);
+    }
   };
+
+
 
   const onSubmit = async (data: AddMyHotelForm) => {
     try {
@@ -269,7 +294,16 @@ const AddMyHotelPage: React.FC = () => {
               )}
 
               {scrapeError && (
-                <Alert severity="error" sx={{ mb: 2 }}>{scrapeError}</Alert>
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {scrapeError}
+                  {showRetry && (
+                    <Box sx={{ mt: 2 }}>
+                      <Button variant="outlined" color="primary" onClick={handleRetryScrape}>
+                        Réessayer
+                      </Button>
+                    </Box>
+                  )}
+                </Alert>
               )}
 
               <Controller

@@ -10,6 +10,7 @@ import DashboardPage from './pages/DashboardPage';
 import HotelsPage from './pages/HotelsPage';
 import AddCompetitorPage from './pages/AddCompetitorPage';
 import AddMyHotelPage from './pages/AddMyHotelPage';
+import HotelDetailsPage from './pages/HotelDetailsPage';
 
 // Pages temporaires pour les routes non implémentées
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
@@ -31,6 +32,7 @@ function App() {
               <Route path="/my-hotels" element={<HotelsPage />} />
               <Route path="/add-competitor" element={<AddCompetitorPage />} />
               <Route path="/add-my-hotel" element={<AddMyHotelPage />} />
+              <Route path="/hotel/:id" element={<HotelDetailsPage />} />
               <Route 
                 path="/competitor-analysis" 
                 element={<PlaceholderPage title="Analyse Concurrentielle" />} 
