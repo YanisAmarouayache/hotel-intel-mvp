@@ -16,10 +16,6 @@ const HotelsPage: React.FC = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [selectedHotelId, setSelectedHotelId] = useState<number | null>(null);
 
-  const handleBookHotel = (hotelId: number) => {
-    console.log('Réserver hôtel:', hotelId);
-    // TODO: Implémenter la logique de réservation
-  };
 
   const handleDeleteHotel = (hotelId: number) => {
     setSelectedHotelId(hotelId);
@@ -82,7 +78,7 @@ const HotelsPage: React.FC = () => {
           message="Aucun hôtel n'est disponible pour le moment. Veuillez réessayer plus tard."
         />
       ) : (
-        <HotelsGrid hotels={hotels} onBook={handleBookHotel} onDelete={handleDeleteHotel} />
+        <HotelsGrid hotels={hotels}  onDelete={handleDeleteHotel} />
       )}
       <ConfirmDialog
         open={confirmOpen}
