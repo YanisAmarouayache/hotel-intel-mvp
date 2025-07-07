@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "hotels" ALTER COLUMN "userRating" SET DATA TYPE DOUBLE PRECISION;

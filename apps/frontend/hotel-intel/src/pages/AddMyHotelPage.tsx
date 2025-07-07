@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import GenericDialog from '../components/Dialog/GenericDialog';
 import {
   Box,
   Typography,
@@ -67,6 +68,9 @@ const AddMyHotelPage: React.FC = () => {
   const [extractedData, setExtractedData] = useState<any>(null);
   const [createHotel, { loading: isSubmitting }] = useMutation(CREATE_HOTEL);
   const [scrapeError, setScrapeError] = useState<string | null>(null);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
 
   const {
     control,
@@ -141,6 +145,8 @@ const AddMyHotelPage: React.FC = () => {
       
       console.log('Nom final:', hotelName);
       console.log('Ville finale:', hotelCity);
+      console.log('extractedData:', extractedData);
+      
       
       await createHotel({
         variables: {
@@ -150,20 +156,22 @@ const AddMyHotelPage: React.FC = () => {
           address: data.address || extractedData?.address || undefined,
           description: data.description || undefined,
           starRating: extractedData?.starRating || undefined,
-          userRating: extractedData?.userRating ? parseFloat(extractedData.userRating) : undefined,
+          userRating:  extractedData?.userRating ? parseFloat(extractedData.userRating.replace(',', '.')) : undefined,
           reviewCount: extractedData?.reviewCount || undefined,
           amenities: extractedData?.amenities || [],
           images: extractedData?.images || [],
           isCompetitor: false, // C'est votre hôtel, pas un compétiteur
         },
       });
-      alert('Votre hôtel a été ajouté avec succès!');
+      setDialogMessage('Votre hôtel a été ajouté avec succès!');
+      setSuccessDialogOpen(true);
       reset();
       setActiveStep(0);
       setExtractedData(null);
     } catch (error) {
       console.error('Erreur lors de l\'ajout:', error);
-      alert('Erreur lors de l\'ajout de votre hôtel');
+      setDialogMessage("Erreur lors de l'ajout de votre hôtel");
+      setErrorDialogOpen(true);
       setActiveStep(0);
       setIsVerifying(false);
     }
@@ -486,8 +494,22 @@ const AddMyHotelPage: React.FC = () => {
           )}
         </Paper>
       )}
-    </Box>
+    <GenericDialog
+      open={successDialogOpen}
+      onClose={() => setSuccessDialogOpen(false)}
+      title="Succès"
+      message={dialogMessage}
+      color="success"
+    />
+    <GenericDialog
+      open={errorDialogOpen}
+      onClose={() => setErrorDialogOpen(false)}
+      title="Erreur"
+      message={dialogMessage}
+      color="error"
+    />
+  </Box>
   );
 };
 
-export default AddMyHotelPage; 
+export default AddMyHotelPage;
