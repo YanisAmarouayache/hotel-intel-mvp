@@ -1,7 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Get, Query, BadRequestException } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ScraperService } from './scraper.service';
 import { ScrapeHotelDto, ScrapeBatchDto, ScrapingResult, BatchScrapingResult } from './types';
+import scrapeBooking from './scrape-booking';
 
 @ApiTags('scraper')
 @Controller('scraper')
@@ -56,5 +57,18 @@ export class ScraperController {
   })
   async scrapeBatch(@Body() body: ScrapeBatchDto): Promise<BatchScrapingResult> {
     return this.scraperService.scrapeMultipleHotels(body.urls);
+  }
+
+  @Get('scrapmyhotelfrombooking')
+  async scrapMyHotelFromBooking(@Query('url') url: string) {
+    if (!url || !url.includes('booking.com')) {
+      throw new BadRequestException('URL Booking.com invalide');
+    }
+    try {
+      const data = await scrapeBooking(url);
+      return data;
+    } catch (e) {
+      throw new BadRequestException('Erreur lors du scraping: ' + e.message);
+    }
   }
 } 

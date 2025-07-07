@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { chromium, Browser, Page } from 'playwright';
-import { HotelData, PricingData, ScrapedHotel, ScrapingResult, BatchScrapingResult } from './types';
+import { HotelData, DailyPriceData, ScrapedHotel, ScrapingResult, BatchScrapingResult } from './types';
 
 @Injectable()
 export class ScraperService {
@@ -10,11 +10,27 @@ export class ScraperService {
   private graphqlResponses: any[] = [];
 
   async initialize(): Promise<void> {
-    this.logger.log('🚀 Initializing Playwright browser...');
+    this.logger.log('🚀 Initializing Playwright browser for Render.com...');
     this.browser = await chromium.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI',
+        '--disable-ipc-flooding-protection',
+        '--memory-pressure-off',
+        '--max_old_space_size=256'
+      ]
     });
+    
     this.page = await this.browser.newPage();
     
     // Set user agent to avoid detection
@@ -22,16 +38,25 @@ export class ScraperService {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
     
-    // Enable request interception
+    // Block unnecessary resources to save bandwidth and memory
     await this.page.route('**/*', (route) => {
-      if (route.request().resourceType() === 'image') {
+      const resourceType = route.request().resourceType();
+      if (resourceType === 'image' || resourceType === 'media' || resourceType === 'font') {
         route.abort();
+      } else if (resourceType === 'stylesheet') {
+        // Allow CSS but limit to essential ones
+        const url = route.request().url();
+        if (url.includes('booking.com') || url.includes('googleapis') || url.includes('gstatic')) {
+          route.continue();
+        } else {
+          route.abort();
+        }
       } else {
         route.continue();
       }
     });
 
-    this.logger.log('✅ Browser initialized successfully');
+    this.logger.log('✅ Browser initialized for Render.com');
   }
 
   async scrapeHotel(url: string): Promise<ScrapingResult> {
@@ -49,8 +74,11 @@ export class ScraperService {
       // Set up GraphQL response listener BEFORE navigating
       this.setupGraphQLListener();
 
-      // Navigate to the hotel page
-      await this.page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+      // Navigate to the hotel page with shorter timeout for Render.com
+      await this.page.goto(url, { 
+        waitUntil: 'domcontentloaded', // Faster than networkidle
+        timeout: 15000 // Reduced from 30000
+      });
       this.logger.log('📄 Page loaded successfully');
 
       // Extract hotel details
@@ -62,12 +90,12 @@ export class ScraperService {
       this.logger.log('📅 Date picker clicked');
 
       // Wait for and extract pricing data
-      const pricingData = await this.extractPricingData();
-      this.logger.log(`💰 Found ${pricingData.length} pricing entries`);
+      const dailyPrices = await this.extractPricingData();
+      this.logger.log(`💰 Found ${dailyPrices.length} daily prices`);
 
       const scrapedHotel: ScrapedHotel = {
         hotel: hotelData,
-        pricing: pricingData,
+        dailyPrices: dailyPrices,
         scrapedAt: new Date().toISOString()
       };
 
@@ -79,7 +107,6 @@ export class ScraperService {
         data: scrapedHotel,
         url
       };
-
     } catch (error) {
       this.logger.error(`❌ Error scraping ${url}:`, error);
       return {
@@ -91,8 +118,8 @@ export class ScraperService {
   }
 
   async scrapeMultipleHotels(urls: string[]): Promise<BatchScrapingResult> {
-    this.logger.log(`🏨🏨 Scraping ${urls.length} hotels...`);
-    
+    this.logger.log(`🏨 Scraping ${urls.length} hotels...`);
+
     const startTime = Date.now();
     const results: ScrapingResult[] = [];
     let successfulScrapes = 0;
@@ -101,25 +128,25 @@ export class ScraperService {
     for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
       this.logger.log(`\n[${i + 1}/${urls.length}] Scraping: ${url}`);
-      
+
       const result = await this.scrapeHotel(url);
       results.push(result);
-      
+
       if (result.success) {
         successfulScrapes++;
       } else {
         failedScrapes++;
       }
       
-      // Add delay between requests to be respectful
+      // Add delay between requests to be respectful (reduced for Render.com)
       if (i < urls.length - 1) {
-        this.logger.log('⏳ Waiting 2 seconds before next request...');
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        this.logger.log('⏳ Waiting 1 second before next request...');
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 2000
       }
     }
 
     const duration = Date.now() - startTime;
-    
+
     const batchResult: BatchScrapingResult = {
       results,
       totalHotels: urls.length,
@@ -166,7 +193,8 @@ export class ScraperService {
 
     const hotelData: HotelData = {
       name: '',
-      url: this.page.url()
+      url: this.page.url(),
+      city: 'Unknown' // Default value, will be extracted
     };
 
     try {
@@ -174,19 +202,22 @@ export class ScraperService {
       hotelData.name = await this.extractHotelName();
       this.logger.log(`🏨 Extracted hotel name: ${hotelData.name}`);
 
+      // Extract city from URL or page content
+      hotelData.city = await this.extractCity();
+
       // Extract address
       const addressElement = await this.page.$('[data-testid="property-location"], .hp__hotel-address, .address');
       if (addressElement) {
         hotelData.address = await addressElement.textContent() || '';
       }
 
-      // Extract rating
+      // Extract star rating
       const ratingElement = await this.page.$('[data-testid="review-score"], .review-score, .rating');
       if (ratingElement) {
         const ratingText = await ratingElement.textContent();
         const ratingMatch = ratingText?.match(/(\d+(?:\.\d+)?)/);
         if (ratingMatch) {
-          hotelData.rating = parseFloat(ratingMatch[1]);
+          hotelData.userRating = parseFloat(ratingMatch[1]);
         }
       }
 
@@ -225,12 +256,42 @@ export class ScraperService {
           hotelData.images.push(src);
         }
       }
-
     } catch (error) {
       this.logger.warn('⚠️ Some hotel details could not be extracted:', error);
     }
 
     return hotelData;
+  }
+
+  private async extractCity(): Promise<string> {
+    if (!this.page) return 'Unknown';
+
+    try {
+      // Try to extract city from URL first
+      const url = this.page.url();
+      const urlMatch = url.match(/hotel\/([^\/]+)\/([^\/]+)/);
+      if (urlMatch) {
+        return urlMatch[2].replace('.fr.html', '').replace('.com.html', '');
+      }
+
+      // Try to extract from page content
+      const cityElement = await this.page.$('[data-testid="property-location"], .hp__hotel-address');
+      if (cityElement) {
+        const text = await cityElement.textContent();
+        if (text) {
+          // Extract city from address (usually the last part)
+          const parts = text.split(',').map(p => p.trim());
+          if (parts.length > 0) {
+            return parts[parts.length - 1];
+          }
+        }
+      }
+
+      return 'Unknown';
+    } catch (error) {
+      this.logger.warn('⚠️ Could not extract city:', error);
+      return 'Unknown';
+    }
   }
 
   private async extractHotelName(): Promise<string> {
@@ -416,14 +477,14 @@ export class ScraperService {
     }
   }
 
-  private async extractPricingData(): Promise<PricingData[]> {
+  private async extractPricingData(): Promise<DailyPriceData[]> {
     if (!this.page) throw new Error('Page not available');
 
-    const pricingData: PricingData[] = [];
+    const pricingData: DailyPriceData[] = [];
 
     // Attendre après le click (déjà fait dans clickDatePicker)
     // Ici, on attend juste un peu pour s'assurer que tout est capturé
-    await this.page.waitForTimeout(1000);
+    await this.page.waitForTimeout(500); // Reduced from 1000
 
     // Process collected GraphQL responses
     for (const response of this.graphqlResponses) {
@@ -441,8 +502,8 @@ export class ScraperService {
     return pricingData;
   }
 
-  private parseGraphQLResponse(response: any): PricingData[] {
-    const pricing: PricingData[] = [];
+  private parseGraphQLResponse(response: any): DailyPriceData[] {
+    const pricing: DailyPriceData[] = [];
 
     try {
       // Handle availabilityCalendar structure (like original)
@@ -471,7 +532,7 @@ export class ScraperService {
                   price: price,
                   currency: 'EUR',
                   availability: true,
-                  roomType: 'Standard'
+                  roomCategory: 'Standard'
                 });
                 this.logger.log(`💰 ${day.checkin}: ${priceStr} (€${price})`);
               }
@@ -496,7 +557,7 @@ export class ScraperService {
               price: parseFloat(day.price.amount || day.price),
               currency: day.price.currency || 'EUR',
               availability: day.available !== false,
-              roomType: day.roomType || 'Standard'
+              roomCategory: day.roomType || 'Standard'
             });
           }
         }
@@ -511,7 +572,7 @@ export class ScraperService {
               price: parseFloat(day.price.amount || day.price),
               currency: day.price.currency || 'EUR',
               availability: day.available !== false,
-              roomType: day.roomType || 'Standard'
+              roomCategory: day.roomType || 'Standard'
             });
           }
         }
@@ -545,10 +606,10 @@ export class ScraperService {
     }
   }
 
-  private async extractPricingFromPage(): Promise<PricingData[]> {
+  private async extractPricingFromPage(): Promise<DailyPriceData[]> {
     if (!this.page) throw new Error('Page not available');
 
-    const pricing: PricingData[] = [];
+    const pricing: DailyPriceData[] = [];
 
     try {
       // Look for pricing elements on the page
@@ -565,7 +626,7 @@ export class ScraperService {
                 price: parseFloat(priceMatch[1].replace(',', '')),
                 currency: 'EUR',
                 availability: true,
-                roomType: 'Standard'
+                roomCategory: 'Standard'
               });
             }
           }

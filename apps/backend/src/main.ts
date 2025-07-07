@@ -7,14 +7,15 @@ import * as fs from 'fs';
 import * as https from 'https';
 
 async function bootstrap() {
-  const httpsOptions = {
-    key: fs.readFileSync('./ssl/server.key'),
-    cert: fs.readFileSync('./ssl/server.cert'),
-  };
+  // const httpsOptions = {
+  //   key: fs.readFileSync('./ssl/server.key'),
+  //   cert: fs.readFileSync('./ssl/server.cert'),
+  // };
 
-  const app = await NestFactory.create(AppModule, {
-    httpsOptions,
-  });
+  // const app = await NestFactory.create(AppModule, {
+  //   httpsOptions,
+  // });
+  const app = await NestFactory.create(AppModule);
 
   app.enableCors({
     origin: [
@@ -41,6 +42,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(16443); // HTTPS standard port
+  // await app.listen(16443); // HTTPS standard port
+  await app.listen(3000);
 }
 bootstrap();

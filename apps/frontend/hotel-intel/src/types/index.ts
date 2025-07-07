@@ -1,9 +1,41 @@
+// Types pour les prix quotidiens
+export interface DailyPrice {
+  id: number;
+  date: string;
+  price: number;
+  currency: string;
+  availability: boolean;
+  hotelId: number;
+  roomCategoryId?: number;
+  scrapedAt: string;
+}
+
+// Types pour les catégories de chambres
+export interface RoomCategory {
+  id: number;
+  name: string;
+  description?: string;
+  hotelId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Types pour les hôtels
 export interface Hotel {
   id: number;
   name: string;
+  url: string;
   city: string;
-  price: number;
+  address?: string;
+  starRating?: number;
+  userRating?: number;
+  reviewCount?: number;
+  description?: string;
+  amenities?: string[];
+  images?: string[];
+  isCompetitor: boolean;
+  dailyPrices?: DailyPrice[];
+  roomCategories?: RoomCategory[];
   createdAt: string;
   updatedAt: string;
 }

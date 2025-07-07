@@ -32,6 +32,7 @@ const navigationItems = [
   { text: 'Dashboard', icon: <Dashboard />, path: '/' },
   { text: 'Mes Hôtels', icon: <Hotel />, path: '/my-hotels' },
   { text: 'Ajouter Compétiteur', icon: <Add />, path: '/add-competitor' },
+  { text: 'Ajouter mon hôtel', icon: <Hotel />, path: '/add-my-hotel' },
   { text: 'Analyse Concurrentielle', icon: <Analytics />, path: '/competitor-analysis' },
   { text: 'Évolution des Prix', icon: <Timeline />, path: '/price-evolution' },
   { text: 'Stratégie de Yield', icon: <TrendingUp />, path: '/yield-strategy' },
