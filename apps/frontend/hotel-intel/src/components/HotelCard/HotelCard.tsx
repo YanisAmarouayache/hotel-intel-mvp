@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -13,9 +13,15 @@ import type { Hotel } from '../../types';
 interface HotelCardProps {
   hotel: Hotel;
   onBook?: (hotelId: number) => void;
+  onDelete?: (hotelId: number) => void;
 }
 
-const HotelCard: React.FC<HotelCardProps> = ({ hotel, onBook }) => {
+import DeleteIcon from '@mui/icons-material/Delete';
+const HotelCard: React.FC<HotelCardProps> = ({ hotel, onBook, onDelete }) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.(hotel.id);
+  };
   const handleBookClick = () => {
     onBook?.(hotel.id);
   };
@@ -114,17 +120,29 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onBook }) => {
             variant="outlined"
             color="primary"
           />
-          <Button 
-            variant="contained" 
-            size="small"
-            onClick={handleBookClick}
-            sx={{ 
-              fontWeight: 600,
-              textTransform: 'none'
-            }}
-          >
-            Réserver
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button 
+              variant="contained" 
+              size="small"
+              onClick={handleBookClick}
+              sx={{ 
+                fontWeight: 600,
+                textTransform: 'none'
+              }}
+            >
+              Réserver
+            </Button>
+            <Button 
+              variant="outlined" 
+              size="small"
+              color="error"
+              onClick={handleDeleteClick}
+              sx={{ fontWeight: 600, textTransform: 'none' }}
+              startIcon={<DeleteIcon />}
+            >
+              Supprimer
+            </Button>
+          </Box>
         </Box>
       </CardContent>
     </Card>

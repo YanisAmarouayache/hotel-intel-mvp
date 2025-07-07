@@ -1,17 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Container, Typography, Box } from '@mui/material';
 import { useHotels } from '../hooks/useHotels';
 import HotelsGrid from '../components/HotelsGrid';
+import ConfirmDialog from '../components/Dialog/ConfirmDialog';
+import { useMutation } from '@apollo/client';
+import { DELETE_HOTEL } from '../graphql/queries';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorDisplay from '../components/ErrorDisplay';
 import EmptyState from '../components/EmptyState';
 
 const HotelsPage: React.FC = () => {
-  const { hotels, loading, error } = useHotels();
+
+  const { hotels, loading, error, refetch } = useHotels();
+  const [deleteHotel] = useMutation(DELETE_HOTEL);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedHotelId, setSelectedHotelId] = useState<number | null>(null);
 
   const handleBookHotel = (hotelId: number) => {
     console.log('Réserver hôtel:', hotelId);
     // TODO: Implémenter la logique de réservation
+  };
+
+  const handleDeleteHotel = (hotelId: number) => {
+    setSelectedHotelId(hotelId);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedHotelId == null) return;
+    await deleteHotel({ variables: { id: selectedHotelId } });
+    setConfirmOpen(false);
+    setSelectedHotelId(null);
+    refetch();
   };
 
   if (loading) {
@@ -62,8 +82,18 @@ const HotelsPage: React.FC = () => {
           message="Aucun hôtel n'est disponible pour le moment. Veuillez réessayer plus tard."
         />
       ) : (
-        <HotelsGrid hotels={hotels} onBook={handleBookHotel} />
+        <HotelsGrid hotels={hotels} onBook={handleBookHotel} onDelete={handleDeleteHotel} />
       )}
+      <ConfirmDialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Supprimer l'hôtel ?"
+        message="Êtes-vous sûr de vouloir supprimer cet hôtel ? Cette action est irréversible."
+        confirmText="Supprimer"
+        cancelText="Annuler"
+      />
+      
     </Container>
   );
 };
