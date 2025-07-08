@@ -193,148 +193,194 @@ const AnalyseConcurentiellePage = () => {
         })),
     [hotels, visibleHotels, startDate, endDate]
   );
-
-  // Pour afficher les marqueurs de dates où il y a des prix
-  const dateMarkers = useMemo(() => {
-    if (!startDate && !endDate) return allDates;
-    return allDates.filter((d) => {
-      const date = parseDate(d);
-      return (
-        (!startDate || (date && date >= startDate)) &&
-        (!endDate || (date && date <= endDate))
-      );
-    });
-  }, [allDates, startDate, endDate]);
-
-  if (loading)
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="40vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  if (error) return <Alert severity="error">Erreur: {error.message}</Alert>;
-  if (!data?.hotels) return <Alert severity="info">Aucun hôtel trouvé.</Alert>;
+  
+const CustomTooltip = ({ slice }: { slice: any }) => {
+  const date = slice.points?.[0]?.data?.xFormatted || "";
 
   return (
-    <Paper sx={{ p: 3, mb: 4, background: "#fff" }}>
-      <Typography variant="h4" fontWeight={700} mb={2} color="primary.main">
-        Analyse concurrentielle
+    <Paper sx={{ p: 1.5, minWidth: 180 }}>
+      <Typography variant="body2" fontWeight={700} gutterBottom>
+        {date}
       </Typography>
-      <Typography variant="body1" mb={2}>
-        Visualisez l'évolution des prix de votre hôtel (en couleur) et de vos
-        concurrents. Décochez un hôtel pour masquer sa courbe. Sélectionnez une
-        plage de dates avec le slider.
-      </Typography>
-      <HotelLegend
-        hotels={hotels}
-        visibleHotels={visibleHotels}
-        setVisibleHotels={setVisibleHotels}
-      />
-      <Box mb={2} width={400}>
-        <Typography gutterBottom>
-          Plage de dates affichée :{" "}
-          {allDates[dateRangeIdx[0]] && allDates[dateRangeIdx[1]]
-            ? `${formatDateFR(allDates[dateRangeIdx[0]])} — ${formatDateFR(
-                allDates[dateRangeIdx[1]]
-              )}`
-            : ""}
-        </Typography>
-        <Slider
-          value={dateRangeIdx}
-          min={0}
-          max={Math.max(0, allDates.length - 1)}
-          step={1}
-          onChange={(_, v) => setDateRangeIdx(v as [number, number])}
-          valueLabelDisplay="auto"
-          marks={[
-            {
-              value: 0,
-              label: allDates[0] ? formatDateFR(allDates[0]) : "",
-            },
-            {
-              value: allDates.length - 1,
-              label:
-                allDates[allDates.length - 1] &&
-                formatDateFR(allDates[allDates.length - 1]),
-            },
-          ]}
-          disableSwap
-        />
-      </Box>
-      <Box height={420}>
-        <ResponsiveLine
-          data={nivoData}
-          margin={{ top: 40, right: 30, bottom: 80, left: 60 }}
-          xScale={{ type: "time", format: "native" }}
-          xFormat="time:%d/%m/%Y"
-          yScale={{ type: "linear", min: "auto", max: "auto", stacked: false }}
-          axisBottom={{
-            format: "%d/%m",
-            tickValues: "every 3 days",
-            legend: "Date",
-            legendOffset: 40,
-            legendPosition: "middle",
-            tickRotation: -30,
-          }}
-          axisLeft={{
-            legend: "Prix (€)",
-            legendOffset: -50,
-            legendPosition: "middle",
-          }}
-          enablePoints={false}
-          enableSlices="x"
-          enableArea={false}
-          colors={d => (d.color as string)}
-          lineWidth={2}
-          pointSize={8}
-          useMesh={true}
-          theme={{
-            axis: {
-              ticks: {
-                text: { fontSize: 13, fill: "#333" },
-              },
-              legend: { text: { fontSize: 14, fontWeight: 700 } },
-            },
-            tooltip: {
-              container: {
-                background: "#fff",
-                color: "#222",
-                fontSize: 14,
-                borderRadius: 8,
-                boxShadow: theme.shadows[2],
-              },
-            },
-          }}
-          tooltip={({ point }) => (
-            <Box p={1}>
-              <Typography fontWeight={700}>{point.seriesId}</Typography>
-              <Typography>
-                {point.data.xFormatted} : <b>{point.data.yFormatted} €</b>
-              </Typography>
-            </Box>
-          )}
-          markers={dateMarkers
-            .map((date) => parseDate(date))
-            .filter((d): d is Date => d !== null)
-            .map((date) => ({
-              axis: "x",
-              value: date,
-              lineStyle: {
-                stroke: "#bbb",
-                strokeWidth: 1,
-                strokeDasharray: "2 2",
-              },
-              legend: "",
-            }))}
-        />
-      </Box>
+      {slice.points.map((point: any) => (
+        <Box
+          key={point.id}
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={0.5}
+        >
+          <Box
+            display="flex"
+            alignItems="center"
+            maxWidth={100}
+            title={point.seriesId}
+          >
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                bgcolor: point.seriesColor,
+                mr: 1,
+                flexShrink: 0,
+              }}
+            />
+            <Typography
+              variant="body2"
+              sx={{
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                color: point.serieColor,
+              }}
+            >
+              {point.seriesId}
+            </Typography>
+          </Box>
+          <Typography variant="body2" fontWeight={500}>
+            {point.data.yFormatted} €
+          </Typography>
+        </Box>
+      ))}
     </Paper>
   );
+};
+
+// Pour afficher les marqueurs de dates où il y a des prix
+const dateMarkers = useMemo(() => {
+  if (!startDate && !endDate) return allDates;
+  return allDates.filter((d) => {
+    const date = parseDate(d);
+    return (
+      (!startDate || (date && date >= startDate)) &&
+      (!endDate || (date && date <= endDate))
+    );
+  });
+}, [allDates, startDate, endDate]);
+
+if (loading)
+  return (
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="40vh"
+    >
+      <CircularProgress />
+    </Box>
+  );
+if (error) return <Alert severity="error">Erreur: {error.message}</Alert>;
+if (!data?.hotels) return <Alert severity="info">Aucun hôtel trouvé.</Alert>;
+
+return (
+  <Paper sx={{ p: 3, mb: 4, background: "#fff" }}>
+    <Typography variant="h4" fontWeight={700} mb={2} color="primary.main">
+      Analyse concurrentielle
+    </Typography>
+    <Typography variant="body1" mb={2}>
+      Visualisez l'évolution des prix de votre hôtel (en couleur) et de vos
+      concurrents. Décochez un hôtel pour masquer sa courbe. Sélectionnez une
+      plage de dates avec le slider.
+    </Typography>
+    <HotelLegend
+      hotels={hotels}
+      visibleHotels={visibleHotels}
+      setVisibleHotels={setVisibleHotels}
+    />
+    <Box mb={2} width={400}>
+      <Typography gutterBottom>
+        Plage de dates affichée :{" "}
+        {allDates[dateRangeIdx[0]] && allDates[dateRangeIdx[1]]
+          ? `${formatDateFR(allDates[dateRangeIdx[0]])} — ${formatDateFR(
+              allDates[dateRangeIdx[1]]
+            )}`
+          : ""}
+      </Typography>
+      <Slider
+        value={dateRangeIdx}
+        min={0}
+        max={Math.max(0, allDates.length - 1)}
+        step={1}
+        onChange={(_, v) => setDateRangeIdx(v as [number, number])}
+        valueLabelDisplay="auto"
+        marks={[
+          {
+            value: 0,
+            label: allDates[0] ? formatDateFR(allDates[0]) : "",
+          },
+          {
+            value: allDates.length - 1,
+            label:
+              allDates[allDates.length - 1] &&
+              formatDateFR(allDates[allDates.length - 1]),
+          },
+        ]}
+        disableSwap
+      />
+    </Box>
+    <Box height={420}>
+      <ResponsiveLine
+        data={nivoData}
+        margin={{ top: 40, right: 30, bottom: 80, left: 60 }}
+        xScale={{ type: "time", format: "native" }}
+        xFormat="time:%d/%m/%Y"
+        yScale={{ type: "linear", min: "auto", max: "auto", stacked: false }}
+        axisBottom={{
+          format: "%d/%m",
+          tickValues: "every 3 days",
+          legend: "Date",
+          legendOffset: 40,
+          legendPosition: "middle",
+          tickRotation: -30,
+        }}
+        axisLeft={{
+          legend: "Prix (€)",
+          legendOffset: -50,
+          legendPosition: "middle",
+        }}
+        enablePoints={false}
+        enableSlices="x"
+        enableArea={false}
+        colors={(d) => d.color as string}
+        lineWidth={2}
+        pointSize={8}
+        useMesh={true}
+        theme={{
+          axis: {
+            ticks: {
+              text: { fontSize: 13, fill: "#333" },
+            },
+            legend: { text: { fontSize: 14, fontWeight: 700 } },
+          },
+          tooltip: {
+            container: {
+              background: "#fff",
+              color: "#222",
+              fontSize: 14,
+              borderRadius: 8,
+              boxShadow: theme.shadows[2],
+            },
+          },
+        }}
+        sliceTooltip={CustomTooltip}
+        markers={dateMarkers
+          .map((date) => parseDate(date))
+          .filter((d): d is Date => d !== null)
+          .map((date) => ({
+            axis: "x",
+            value: date,
+            lineStyle: {
+              stroke: "#bbb",
+              strokeWidth: 1,
+              strokeDasharray: "2 2",
+            },
+            legend: "",
+          }))}
+      />
+    </Box>
+  </Paper>
+);
 };
 
 export default AnalyseConcurentiellePage;
