@@ -27,7 +27,7 @@ const CustomTooltip = ({ slice }: { slice: any }) => {
                 width: 12,
                 height: 12,
                 borderRadius: "50%",
-                bgcolor: point.serieColor,
+                bgcolor: point.seriesColor,
                 mr: 1,
                 flexShrink: 0,
                 border: "1.5px solid #fff",
@@ -40,14 +40,14 @@ const CustomTooltip = ({ slice }: { slice: any }) => {
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                color: point.serieColor,
+                color: point.seriesColor,
                 fontWeight: 600,
               }}
             >
-              {point.serieId}
+              {point.seriesId}
             </Typography>
           </Box>
-          <Typography variant="body2" fontWeight={500}>
+          <Typography variant="body2" whiteSpace="nowrap" fontWeight={500}>
             {point.data.yFormatted} €
           </Typography>
         </Box>

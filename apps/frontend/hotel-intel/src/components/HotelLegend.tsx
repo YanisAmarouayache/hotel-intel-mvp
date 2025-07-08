@@ -35,17 +35,7 @@ const HotelLegend = ({ hotels, visibleHotels, setVisibleHotels }: Props) => (
           />
         }
         label={
-          <Box display="flex" alignItems="center">
-            <Box
-              sx={{
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                bgcolor: hotel.color,
-                mr: 1,
-                border: "1px solid #bbb",
-              }}
-            />
+          <Box alignItems="center">
             <span style={{ fontWeight: hotel.isCompetitor ? 400 : 700 }}>
               {hotel.name}
             </span>
