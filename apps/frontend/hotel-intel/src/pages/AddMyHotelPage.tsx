@@ -30,6 +30,8 @@ import { z } from 'zod';
 import { useMutation } from '@apollo/client';
 import { CREATE_HOTEL } from '../graphql/queries';
 
+const api = import.meta.env.VITE_API_URL;
+
 const addMyHotelSchema = z.object({
   name: z.string().optional(),
   url: z
@@ -103,9 +105,20 @@ const AddMyHotelPage: React.FC = () => {
     setShowRetry(false);
     lastScrapeUrl.current = url;
     try {
-      const apiUrl = `http://localhost:3000/scraper/scrapmyhotelfrombooking?url=${encodeURIComponent(url)}`;
+      const apiUrl = `${api}/scraper/scrapmyhotelfrombooking?url=${encodeURIComponent(url)}`;
       const res = await fetch(apiUrl);
-      if (!res.ok) throw new Error(await res.text());
+      const contentType = res.headers.get('content-type');
+      if (!res.ok) {
+        let errorText = await res.text();
+        // Si la réponse est du HTML, message plus explicite
+        if (errorText.startsWith('<!DOCTYPE')) {
+          errorText = 'Erreur serveur ou URL d’API incorrecte. Contactez le support.';
+        }
+        throw new Error(errorText);
+      }
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('La réponse du serveur n’est pas au format JSON. Vérifiez l’URL de l’API.');
+      }
       const data = await res.json();
 
       // Vérification de scraping vide ou incomplet
@@ -141,7 +154,11 @@ const AddMyHotelPage: React.FC = () => {
       setActiveStep(2);
       setShowRetry(false);
     } catch (e: any) {
-      setScrapeError(e.message || 'Erreur lors du scraping');
+      let msg = e.message || 'Erreur lors du scraping';
+      if (msg.startsWith('<!DOCTYPE')) {
+        msg = 'Erreur serveur ou URL d’API incorrecte. Contactez le support.';
+      }
+      setScrapeError(msg);
       setExtractedData(null);
       setActiveStep(0);
       setShowRetry(false);

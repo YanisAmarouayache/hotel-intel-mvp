@@ -24,6 +24,7 @@ async function bootstrap() {
       'http://localhost:3000',
       'http://88.160.195.103:3000',
       'http://88.160.195.103:18080',
+      'https://aardvark-close-horribly.ngrok-free.app',
       'https://88.160.195.103', // <-- pour le HTTPS !
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

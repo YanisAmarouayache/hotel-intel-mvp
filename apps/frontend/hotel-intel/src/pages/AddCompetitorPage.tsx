@@ -23,6 +23,9 @@ import { z } from 'zod';
 import { useMutation } from '@apollo/client';
 import { CREATE_HOTEL } from '../graphql/queries';
 
+
+const api = import.meta.env.VITE_API_URL;
+
 const addCompetitorSchema = z.object({
   name: z.string().min(1, 'Le nom de l\'hôtel est requis'),
   url: z
@@ -92,7 +95,7 @@ const AddCompetitorPage: React.FC = () => {
     setShowRetry(false);
     lastScrapeUrl.current = url;
     try {
-      const apiUrl = `http://localhost:3000/scraper/scrapmyhotelfrombooking?url=${encodeURIComponent(url)}`;
+      const apiUrl = `${api}/scraper/scrapmyhotelfrombooking?url=${encodeURIComponent(url)}`;
       const res = await fetch(apiUrl);
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
