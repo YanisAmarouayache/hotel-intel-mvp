@@ -11,10 +11,11 @@ import HotelsPage from './pages/HotelsPage';
 import AddCompetitorPage from './pages/AddCompetitorPage';
 import AddMyHotelPage from './pages/AddMyHotelPage';
 import HotelDetailsPage from './pages/HotelDetailsPage';
+import AnalyseConcurentiellePage from "./pages/AnalyseConcurentiellePage";
 
 // Pages temporaires pour les routes non implémentées
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
-  <div style={{ padding: '2rem', textAlign: 'center' }}>
+  <div style={{ padding: "2rem", textAlign: "center" }}>
     <h2>{title}</h2>
     <p>Page en cours de développement...</p>
   </div>
@@ -33,29 +34,29 @@ function App() {
               <Route path="/add-competitor" element={<AddCompetitorPage />} />
               <Route path="/add-my-hotel" element={<AddMyHotelPage />} />
               <Route path="/hotel/:id" element={<HotelDetailsPage />} />
-              <Route 
-                path="/competitor-analysis" 
-                element={<PlaceholderPage title="Analyse Concurrentielle" />} 
+              <Route
+                path="/competitor-analysis"
+                element={<AnalyseConcurentiellePage />}
               />
-              <Route 
-                path="/price-evolution" 
-                element={<PlaceholderPage title="Évolution des Prix" />} 
+              <Route
+                path="/price-evolution"
+                element={<PlaceholderPage title="Évolution des Prix" />}
               />
-              <Route 
-                path="/yield-strategy" 
-                element={<PlaceholderPage title="Stratégie de Yield" />} 
+              <Route
+                path="/yield-strategy"
+                element={<PlaceholderPage title="Stratégie de Yield" />}
               />
-              <Route 
-                path="/events" 
-                element={<PlaceholderPage title="Événements" />} 
+              <Route
+                path="/events"
+                element={<PlaceholderPage title="Événements" />}
               />
-              <Route 
-                path="/criteria-weights" 
-                element={<PlaceholderPage title="Critères & Saisons" />} 
+              <Route
+                path="/criteria-weights"
+                element={<PlaceholderPage title="Critères & Saisons" />}
               />
-              <Route 
-                path="/settings" 
-                element={<PlaceholderPage title="Paramètres" />} 
+              <Route
+                path="/settings"
+                element={<PlaceholderPage title="Paramètres" />}
               />
             </Routes>
           </AppLayout>
