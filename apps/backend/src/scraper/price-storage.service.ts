@@ -14,13 +14,10 @@ export class PriceStorageService {
    * @param isMyHotel true si c'est ton propre hôtel, false pour un concurrent
    */
   async saveHotelAndPrices(scraped: ScrapedHotel, isMyHotel = false): Promise<void> {
-    // 1. Upsert hotel (par url)
+      // 1. Ne pas mettre à jour les infos de l'hôtel, seulement créer si non existant
     const dbHotel = await this.prisma.hotel.upsert({
       where: { url: scraped.hotel.url },
-      update: {
-        ...scraped.hotel,
-        isCompetitor: !isMyHotel,
-      },
+        update: {}, // Ne met à jour aucun champ, ne touche pas l'adresse, etc.
       create: {
         ...scraped.hotel,
         isCompetitor: !isMyHotel,

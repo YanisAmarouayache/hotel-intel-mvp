@@ -14,6 +14,7 @@ export const GET_HOTELS = gql`
       amenities
       images
       isCompetitor
+      url
       dailyPrices {
         id
         date
@@ -48,6 +49,7 @@ export const GET_HOTEL = gql`
       amenities
       images
       isCompetitor
+      url
       dailyPrices {
         id
         date
@@ -81,6 +83,7 @@ export const CREATE_HOTEL = gql`
     $amenities: [String!], 
     $images: [String!], 
     $isCompetitor: Boolean
+    $url: String!
   ) {
     createHotel(
       name: $name, 
@@ -94,6 +97,7 @@ export const CREATE_HOTEL = gql`
       amenities: $amenities, 
       images: $images, 
       isCompetitor: $isCompetitor
+      url: $url
     ) {
       id
       name
@@ -106,6 +110,7 @@ export const CREATE_HOTEL = gql`
       amenities
       images
       isCompetitor
+      url
       dailyPrices {
         id
         date
@@ -140,6 +145,7 @@ export const UPDATE_HOTEL = gql`
     $amenities: [String!], 
     $images: [String!], 
     $isCompetitor: Boolean
+    $url: String!
   ) {
     updateHotel(
       id: $id, 
@@ -154,6 +160,7 @@ export const UPDATE_HOTEL = gql`
       amenities: $amenities, 
       images: $images, 
       isCompetitor: $isCompetitor
+      url: $url
     ) {
       id
       name
@@ -166,6 +173,7 @@ export const UPDATE_HOTEL = gql`
       amenities
       images
       isCompetitor
+      url
       dailyPrices {
         id
         date
