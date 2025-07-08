@@ -12,17 +12,26 @@ import {
 import { LocationOn, Euro, CalendarToday } from "@mui/icons-material";
 import type { Hotel } from "../../types";
 import { scrapePricesForHotel } from "../../lib/scrapeApi";
+import ScrapeResultDialog from "../Dialog/ScrapeResultDialog";
 
 interface HotelCardProps {
   hotel: Hotel;
   onDelete?: (hotelId: number) => void;
+  refetchHotels?: () => void;
 }
 
 import DeleteIcon from "@mui/icons-material/Delete";
-const HotelCard: React.FC<HotelCardProps> = ({ hotel, onDelete }) => {
+const HotelCard: React.FC<HotelCardProps> = ({ hotel, onDelete, refetchHotels }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [scrapeResult, setScrapeResult] = useState<{
+    total: number;
+    updated: number;
+    stored: number;
+  } | undefined>(undefined);
+  const [scrapeError, setScrapeError] = useState<string | undefined>(undefined);
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -66,12 +75,20 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onDelete }) => {
       });
     }, 200);
     try {
-      await scrapePricesForHotel(hotel.url);
+      const res = await scrapePricesForHotel(hotel.url);
+      setScrapeResult({
+        total: res.data?.dailyPrices?.length || res.data?.daily_prices?.length || 0,
+        updated: res.updated || 0,
+        stored: res.stored || 0,
+      });
+      setScrapeError(undefined);
+      setDialogOpen(true);
       setProgress(100);
-      alert("Scraping et stockage lancés avec succès !");
+      if (refetchHotels) refetchHotels();
     } catch (err: any) {
+      setScrapeError(err.message || String(err));
+      setDialogOpen(true);
       setProgress(100);
-      alert("Erreur lors du scraping: " + (err.message || err));
     } finally {
       setTimeout(() => {
         setLoading(false);
@@ -230,6 +247,12 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onDelete }) => {
           </Box>
         </Box>
       </CardContent>
+      <ScrapeResultDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        result={scrapeResult}
+        error={scrapeError}
+      />
     </Card>
   );
 };
