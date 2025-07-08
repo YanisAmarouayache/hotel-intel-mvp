@@ -14,18 +14,104 @@ import {
 } from "@mui/material";
 import { useState, useEffect, useMemo } from "react";
 
-// Palette de couleurs pour les hôtels (ajoute-en si besoin)
+// Palette de couleurs pour les hôtels
 const HOTEL_COLORS = [
-  "#1976d2",
-  "#e57373",
-  "#81c784",
-  "#ffb74d",
-  "#ba68c8",
-  "#4dd0e1",
-  "#ffd54f",
-  "#a1887f",
-  "#90a4ae",
+  "#1976d2", "#e57373", "#81c784", "#ffb74d", "#ba68c8", "#4dd0e1", "#ffd54f", "#a1887f", "#90a4ae"
 ];
+
+// Types
+type Hotel = {
+  id: number;
+  name: string;
+  isCompetitor: boolean;
+  color: string;
+  dailyPrices: { date: string; price: number }[];
+};
+
+function parseDate(d: unknown): Date | null {
+  if (!d) return null;
+  if (typeof d === "string" || typeof d === "number" || d instanceof Date) {
+    return new Date(d);
+  }
+  return null;
+}
+
+function formatDateFR(d: string | Date | null | undefined): string {
+  if (!d) return "";
+  const date = typeof d === "string" ? new Date(d) : d;
+  return date.toLocaleDateString("fr-FR");
+}
+
+// Légende verticale
+function HotelLegend({
+  hotels,
+  visibleHotels,
+  setVisibleHotels,
+}: {
+  hotels: Hotel[];
+  visibleHotels: number[];
+  setVisibleHotels: (fn: (v: number[]) => number[]) => void;
+}) {
+  return (
+    <Box display="flex" flexDirection="column" gap={1} mb={2}>
+      {hotels.map((hotel) => (
+        <FormControlLabel
+          key={hotel.id}
+          control={
+            <Checkbox
+              checked={visibleHotels.includes(hotel.id)}
+              onChange={() =>
+                setVisibleHotels((v) =>
+                  v.includes(hotel.id)
+                    ? v.filter((id) => id !== hotel.id)
+                    : [...v, hotel.id]
+                )
+              }
+              sx={{
+                color: hotel.color,
+                "&.Mui-checked": { color: hotel.color },
+              }}
+            />
+          }
+          label={
+            <Box display="flex" alignItems="center">
+              <Box
+                sx={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: "50%",
+                  bgcolor: hotel.color,
+                  mr: 1,
+                  border: "1px solid #bbb",
+                }}
+              />
+              <span style={{ fontWeight: hotel.isCompetitor ? 400 : 700 }}>
+                {hotel.name}
+              </span>
+              {!hotel.isCompetitor && (
+                <Box
+                  component="span"
+                  sx={{
+                    ml: 1,
+                    px: 1,
+                    py: 0.2,
+                    bgcolor: hotel.color,
+                    color: "white",
+                    borderRadius: 1,
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  Mon hôtel
+                </Box>
+              )}
+            </Box>
+          }
+        />
+      ))}
+    </Box>
+  );
+}
 
 const AnalyseConcurentiellePage = () => {
   const theme = useTheme();
@@ -33,7 +119,7 @@ const AnalyseConcurentiellePage = () => {
   const [visibleHotels, setVisibleHotels] = useState<number[]>([]);
 
   // Prépare les données pour Nivo
-  const hotels = useMemo(() => {
+  const hotels: Hotel[] = useMemo(() => {
     if (!data?.hotels) return [];
     return data.hotels.map((h: any, idx: number) => ({
       ...h,
@@ -45,9 +131,9 @@ const AnalyseConcurentiellePage = () => {
   }, [data]);
 
   // Toutes les dates uniques (triées)
-  const allDates = useMemo(() => {
-    const dates = hotels.flatMap((h: any) =>
-      h.dailyPrices.map((p: any) => p.date)
+  const allDates: string[] = useMemo(() => {
+    const dates = hotels.flatMap((h) =>
+      h.dailyPrices.map((p) => p.date)
     );
     return Array.from(new Set(dates)).sort();
   }, [hotels]);
@@ -72,8 +158,8 @@ const AnalyseConcurentiellePage = () => {
       return [null, null];
     }
     return [
-      new Date(allDates[dateRangeIdx[0]] as string),
-      new Date(allDates[dateRangeIdx[1]] as string),
+      parseDate(allDates[dateRangeIdx[0]]),
+      parseDate(allDates[dateRangeIdx[1]]),
     ];
   }, [allDates, dateRangeIdx]);
 
@@ -87,19 +173,20 @@ const AnalyseConcurentiellePage = () => {
   const nivoData = useMemo(
     () =>
       hotels
-        .filter((h: any) => visibleHotels.includes(h.id))
-        .map((hotel: any) => ({
+        .filter((h) => visibleHotels.includes(h.id))
+        .map((hotel) => ({
           id: hotel.name + (!hotel.isCompetitor ? " (Mon hôtel)" : ""),
           color: hotel.color,
           data: hotel.dailyPrices
-            .filter((p: any) => {
-              const d = new Date(p.date);
+            .filter((p) => {
+              const d = parseDate(p.date);
               return (
-                (!startDate || d >= startDate) && (!endDate || d <= endDate)
+                (!startDate || (d && d >= startDate)) &&
+                (!endDate || (d && d <= endDate))
               );
             })
-            .map((p: any) => ({
-              x: new Date(p.date),
+            .map((p) => ({
+              x: parseDate(p.date),
               y: p.price,
             })),
           isCompetitor: hotel.isCompetitor,
@@ -111,8 +198,11 @@ const AnalyseConcurentiellePage = () => {
   const dateMarkers = useMemo(() => {
     if (!startDate && !endDate) return allDates;
     return allDates.filter((d) => {
-      const date = new Date(d as string);
-      return (!startDate || date >= startDate) && (!endDate || date <= endDate);
+      const date = parseDate(d);
+      return (
+        (!startDate || (date && date >= startDate)) &&
+        (!endDate || (date && date <= endDate))
+      );
     });
   }, [allDates, startDate, endDate]);
 
@@ -140,71 +230,17 @@ const AnalyseConcurentiellePage = () => {
         concurrents. Décochez un hôtel pour masquer sa courbe. Sélectionnez une
         plage de dates avec le slider.
       </Typography>
-      <Box display="flex" flexWrap="wrap" gap={2} mb={2}>
-        {hotels.map((hotel: any) => (
-          <FormControlLabel
-            key={hotel.id}
-            control={
-              <Checkbox
-                checked={visibleHotels.includes(hotel.id)}
-                onChange={() =>
-                  setVisibleHotels((v) =>
-                    v.includes(hotel.id)
-                      ? v.filter((id) => id !== hotel.id)
-                      : [...v, hotel.id]
-                  )
-                }
-                sx={{
-                  color: hotel.color,
-                  "&.Mui-checked": { color: hotel.color },
-                }}
-              />
-            }
-            label={
-              <Box display="flex" alignItems="center">
-                <Box
-                  sx={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: "50%",
-                    bgcolor: hotel.color,
-                    mr: 1,
-                    border: "1px solid #bbb",
-                  }}
-                />
-                <span style={{ fontWeight: hotel.isCompetitor ? 400 : 700 }}>
-                  {hotel.name}
-                </span>
-                {!hotel.isCompetitor && (
-                  <Box
-                    component="span"
-                    sx={{
-                      ml: 1,
-                      px: 1,
-                      py: 0.2,
-                      bgcolor: hotel.color,
-                      color: "white",
-                      borderRadius: 1,
-                      fontSize: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    Mon hôtel
-                  </Box>
-                )}
-              </Box>
-            }
-          />
-        ))}
-      </Box>
+      <HotelLegend
+        hotels={hotels}
+        visibleHotels={visibleHotels}
+        setVisibleHotels={setVisibleHotels}
+      />
       <Box mb={2} width={400}>
         <Typography gutterBottom>
           Plage de dates affichée :{" "}
           {allDates[dateRangeIdx[0]] && allDates[dateRangeIdx[1]]
-            ? `${new Date(allDates[dateRangeIdx[0]] as string).toLocaleDateString(
-                "fr-FR"
-              )} — ${new Date(allDates[dateRangeIdx[1]] as string).toLocaleDateString(
-                "fr-FR"
+            ? `${formatDateFR(allDates[dateRangeIdx[0]])} — ${formatDateFR(
+                allDates[dateRangeIdx[1]]
               )}`
             : ""}
         </Typography>
@@ -218,17 +254,13 @@ const AnalyseConcurentiellePage = () => {
           marks={[
             {
               value: 0,
-              label: allDates[0]
-                ? new Date(allDates[0] as string).toLocaleDateString("fr-FR")
-                : "",
+              label: allDates[0] ? formatDateFR(allDates[0]) : "",
             },
             {
               value: allDates.length - 1,
-              label: allDates[allDates.length - 1]
-                ? new Date(allDates[allDates.length - 1] as string).toLocaleDateString(
-                    "fr-FR"
-                  )
-                : "",
+              label:
+                allDates[allDates.length - 1] &&
+                formatDateFR(allDates[allDates.length - 1]),
             },
           ]}
           disableSwap
@@ -257,7 +289,7 @@ const AnalyseConcurentiellePage = () => {
           enablePoints={false}
           enableSlices="x"
           enableArea={false}
-          colors={{ datum: 'color' }}
+          colors={d => (d.color as string)}
           lineWidth={2}
           pointSize={8}
           useMesh={true}
@@ -286,16 +318,19 @@ const AnalyseConcurentiellePage = () => {
               </Typography>
             </Box>
           )}
-          markers={dateMarkers.map((date) => ({
-            axis: "x",
-            value: new Date(date as string),
-            lineStyle: {
-              stroke: "#bbb",
-              strokeWidth: 1,
-              strokeDasharray: "2 2",
-            },
-            legend: "",
-          }))}
+          markers={dateMarkers
+            .map((date) => parseDate(date))
+            .filter((d): d is Date => d !== null)
+            .map((date) => ({
+              axis: "x",
+              value: date,
+              lineStyle: {
+                stroke: "#bbb",
+                strokeWidth: 1,
+                strokeDasharray: "2 2",
+              },
+              legend: "",
+            }))}
         />
       </Box>
     </Paper>
