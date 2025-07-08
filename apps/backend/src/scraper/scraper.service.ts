@@ -1,9 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
+// import { PrismaService } from '../prisma/prisma.service';
 import { chromium, Browser, Page } from 'playwright';
 import { HotelData, DailyPriceData, ScrapedHotel, ScrapingResult, BatchScrapingResult } from './types';
 
 @Injectable()
 export class ScraperService {
+  // constructor(
+  //   private readonly prisma: PrismaService,
+  // ) {}
   private readonly logger = new Logger(ScraperService.name);
   private browser: Browser | null = null;
   private page: Page | null = null;
@@ -50,6 +54,10 @@ export class ScraperService {
     this.logger.log('✅ Browser initialized for Render.com');
   }
 
+  /**
+   * Scrape a hotel and return the data (no DB logic)
+   * @param url URL of the hotel to scrape
+   */
   async scrapeHotel(url: string): Promise<ScrapingResult> {
     if (!this.page) {
       await this.initialize();
@@ -83,6 +91,9 @@ export class ScraperService {
       // Wait for and extract pricing data
       const dailyPrices = await this.extractPricingData();
       this.logger.log(`💰 Found ${dailyPrices.length} daily prices`);
+
+
+
 
       const scrapedHotel: ScrapedHotel = {
         hotel: hotelData,

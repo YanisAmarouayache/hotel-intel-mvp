@@ -58,27 +58,19 @@ const HotelsPage: React.FC = () => {
           gutterBottom
           sx={{ 
             fontWeight: 700,
-            color: 'primary.main'
+            letterSpacing: -1.5,
           }}
         >
-          Hôtels disponibles
-        </Typography>
-        <Typography 
-          variant="body1" 
-          color="text.secondary"
-          sx={{ mb: 2 }}
-        >
-          Découvrez notre sélection d'hôtels de qualité
+          Mes hôtels
         </Typography>
       </Box>
-      
       {hotels.length === 0 ? (
         <EmptyState 
           title="Aucun hôtel disponible"
           message="Aucun hôtel n'est disponible pour le moment. Veuillez réessayer plus tard."
         />
       ) : (
-        <HotelsGrid hotels={hotels}  onDelete={handleDeleteHotel} />
+        <HotelsGrid hotels={hotels} onDelete={handleDeleteHotel} refetchHotels={refetch} />
       )}
       <ConfirmDialog
         open={confirmOpen}
@@ -94,4 +86,4 @@ const HotelsPage: React.FC = () => {
   );
 };
 
-export default HotelsPage; 
+export default HotelsPage;
