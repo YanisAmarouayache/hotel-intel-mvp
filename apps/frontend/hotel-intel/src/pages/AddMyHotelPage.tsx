@@ -106,7 +106,12 @@ const AddMyHotelPage: React.FC = () => {
     lastScrapeUrl.current = url;
     try {
       const apiUrl = `${api}/scraper/scrapmyhotelfrombooking?url=${encodeURIComponent(url)}`;
-      const res = await fetch(apiUrl);
+      const res = await fetch(apiUrl, {
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
       const contentType = res.headers.get('content-type');
       if (!res.ok) {
         let errorText = await res.text();
