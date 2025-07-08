@@ -38,19 +38,10 @@ export class ScraperService {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
     
-    // Block unnecessary resources to save bandwidth and memory
+    // Block only images to avoid breaking JS/CSS (comme hotel-scraper.ts)
     await this.page.route('**/*', (route) => {
-      const resourceType = route.request().resourceType();
-      if (resourceType === 'image' || resourceType === 'media' || resourceType === 'font') {
+      if (route.request().resourceType() === 'image') {
         route.abort();
-      } else if (resourceType === 'stylesheet') {
-        // Allow CSS but limit to essential ones
-        const url = route.request().url();
-        if (url.includes('booking.com') || url.includes('googleapis') || url.includes('gstatic')) {
-          route.continue();
-        } else {
-          route.abort();
-        }
       } else {
         route.continue();
       }
@@ -74,10 +65,10 @@ export class ScraperService {
       // Set up GraphQL response listener BEFORE navigating
       this.setupGraphQLListener();
 
-      // Navigate to the hotel page with shorter timeout for Render.com
+      // Navigate to the hotel page (use networkidle for more reliability)
       await this.page.goto(url, { 
-        waitUntil: 'domcontentloaded', // Faster than networkidle
-        timeout: 15000 // Reduced from 30000
+        waitUntil: 'networkidle', // More reliable for dynamic content
+        timeout: 30000 // Restore to 30s for slow pages
       });
       this.logger.log('📄 Page loaded successfully');
 
@@ -483,17 +474,23 @@ export class ScraperService {
     const pricingData: DailyPriceData[] = [];
 
     // Attendre après le click (déjà fait dans clickDatePicker)
-    // Ici, on attend juste un peu pour s'assurer que tout est capturé
-    await this.page.waitForTimeout(500); // Reduced from 1000
+    // Ici, on attend un peu plus pour s'assurer que tout est capturé
+    await this.page.waitForTimeout(2000); // Augmenté pour laisser le temps aux requêtes GraphQL
 
     // Process collected GraphQL responses
+    let graphqlCount = 0;
     for (const response of this.graphqlResponses) {
       const pricing = this.parseGraphQLResponse(response);
+      if (pricing.length > 0) graphqlCount += pricing.length;
       pricingData.push(...pricing);
     }
 
-    // If no GraphQL data found, try to extract from page content
+    // Log les réponses GraphQL si aucune donnée n'est trouvée
     if (pricingData.length === 0) {
+      this.logger.warn('❗️Aucune donnée de prix trouvée dans les réponses GraphQL. Dump des réponses capturées :');
+      for (const response of this.graphqlResponses) {
+        this.logger.warn(JSON.stringify(response).slice(0, 1000)); // Limite à 1000 caractères
+      }
       this.logger.log('🔍 No GraphQL data found, trying to extract from page content...');
       const pagePricing = await this.extractPricingFromPage();
       pricingData.push(...pagePricing);
