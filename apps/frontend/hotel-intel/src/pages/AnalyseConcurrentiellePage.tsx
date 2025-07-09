@@ -55,7 +55,7 @@ function getLatestPricePerDay(
   );
 }
 
-const AnalyseConcurentiellePage = () => {
+const AnalyseConcurrentiellePage = () => {
   const theme = useTheme();
   const { data, loading, error } = useQuery(GET_HOTELS);
   const [visibleHotels, setVisibleHotels] = useState<number[]>([]);
@@ -336,4 +336,4 @@ const AnalyseConcurentiellePage = () => {
   );
 };
 
-export default AnalyseConcurentiellePage;
+export default AnalyseConcurrentiellePage;
