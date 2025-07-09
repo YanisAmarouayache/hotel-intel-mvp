@@ -13,6 +13,8 @@
     "@hookform/resolvers": "^3.0.0",
     "@mui/icons-material": "^5.0.0",
     "@mui/material": "^5.0.0",
+    "@nivo/core": "^0.99.0",
+    "@nivo/line": "^0.99.0",
     "@types/react-dom": "^19.1.6",
     "graphql": "^16.0.0",
     "react": "^18.0.0",
