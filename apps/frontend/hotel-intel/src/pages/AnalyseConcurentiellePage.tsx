@@ -35,6 +35,26 @@ type Hotel = {
   dailyPrices: { date: string; price: number }[];
 };
 
+function getLatestPricePerDay(
+  prices: { date: string; price: number; scrapedAt: string }[]
+) {
+  // Map: date string (YYYY-MM-DD) => DailyPrice
+  const map = new Map();
+  for (const price of prices) {
+    const day = price.date.slice(0, 10); // 'YYYY-MM-DD'
+    if (
+      !map.has(day) ||
+      new Date(price.scrapedAt) > new Date(map.get(day).scrapedAt)
+    ) {
+      map.set(day, price);
+    }
+  }
+  // Return as sorted array by date
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+}
+
 const AnalyseConcurentiellePage = () => {
   const theme = useTheme();
   const { data, loading, error } = useQuery(GET_HOTELS);
@@ -45,9 +65,7 @@ const AnalyseConcurentiellePage = () => {
     return data.hotels.map((h: any, idx: number) => ({
       ...h,
       color: HOTEL_COLORS[idx % HOTEL_COLORS.length],
-      dailyPrices: [...(h.dailyPrices || [])].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      ),
+      dailyPrices: getLatestPricePerDay([...(h.dailyPrices || [])]),
     }));
   }, [data]);
 
