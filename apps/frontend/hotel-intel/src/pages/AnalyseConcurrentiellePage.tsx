@@ -32,19 +32,23 @@ type Hotel = {
   name: string;
   isCompetitor: boolean;
   color: string;
-  dailyPrices: { date: string; price: number }[];
+  dailyPrices: { date: string; price: number; scrapedAt?: string }[];
 };
 
 function getLatestPricePerDay(
-  prices: { date: string; price: number; scrapedAt: string }[]
+  prices: { date: string; price: number; scrapedAt?: string }[]
 ) {
   // Map: date string (YYYY-MM-DD) => DailyPrice
   const map = new Map();
   for (const price of prices) {
     const day = price.date.slice(0, 10); // 'YYYY-MM-DD'
+    const current = map.get(day);
+    // If no scrapedAt, treat as earliest (or always replace if current also lacks scrapedAt)
     if (
       !map.has(day) ||
-      new Date(price.scrapedAt) > new Date(map.get(day).scrapedAt)
+      (price.scrapedAt &&
+        (!current?.scrapedAt ||
+          new Date(price.scrapedAt) > new Date(current.scrapedAt)))
     ) {
       map.set(day, price);
     }
@@ -62,7 +66,7 @@ const AnalyseConcurrentiellePage = () => {
 
   const hotels: Hotel[] = useMemo(() => {
     if (!data?.hotels) return [];
-    return data.hotels.map((h: any, idx: number) => ({
+    return data.hotels.map((h: Hotel, idx: number) => ({
       ...h,
       color: HOTEL_COLORS[idx % HOTEL_COLORS.length],
       dailyPrices: getLatestPricePerDay([...(h.dailyPrices || [])]),
@@ -100,7 +104,7 @@ const AnalyseConcurrentiellePage = () => {
 
   useEffect(() => {
     if (data?.hotels && visibleHotels.length === 0) {
-      setVisibleHotels(data.hotels.map((h: any) => h.id));
+      setVisibleHotels(data.hotels.map((h: Hotel) => h.id));
     }
   }, [data]);
 
