@@ -1,15 +1,17 @@
-import { Body, Controller, Post, Get, Query, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Post, Get, Query, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { ScraperService } from './scraper.service';
 import { PriceStorageService } from './price-storage.service';
 import { ScrapeHotelDto, ScrapeBatchDto, ScrapingResult, BatchScrapingResult } from './types';
 import scrapeBooking from './scrape-booking';
+import { PrismaService } from '../prisma/prisma.service'; // Adjust the path as needed
 
 
 @ApiTags('scraper')
 @Controller('scraper')
 export class ScraperController {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly scraperService: ScraperService,
     private readonly priceStorageService: PriceStorageService
   ) {}
@@ -68,17 +70,23 @@ export class ScraperController {
     description: 'Scraping or storage failed'
   })
   async scrapeAndStoreHotel(
-    @Body() body: ScrapeHotelDto,
-    @Query('isMyHotel') isMyHotel?: string
+    @Query('hotelId') hotelId: string,
+    @Query('isMyHotel') isMyHotel?: string,
   ) {
-    const scrapeResult = await this.scraperService.scrapeHotel(body.url);
-    if (!scrapeResult.success || !scrapeResult.data) {
+
+    const dbHotel = await this.prisma.hotel.findUnique({
+      where: { id: Number(hotelId) },
+    });
+    if (!dbHotel) {
+      throw new NotFoundException('Hotel not found');
+    }
+
+    const scrapeResult = await this.scraperService.scrapeHotel(dbHotel.url);
+    if (!scrapeResult.success) {
       throw new BadRequestException(scrapeResult.error || 'Scraping failed');
     }
-    // Default to false if not provided
-    const isMine = isMyHotel === 'true';
-    await this.priceStorageService.saveHotelAndPrices(scrapeResult.data, isMine);
-    return { success: true, message: 'Scraped and stored successfully', data: scrapeResult.data };
+    await this.priceStorageService.saveHotelPricesOnly(dbHotel.id, scrapeResult.dailyPrices);
+    return { success: true, message: 'Scraped and stored successfully', data: scrapeResult };
   }
 
 
@@ -143,8 +151,14 @@ export class ScraperController {
     const isMine = isMyHotel === 'true';
     for (const result of batchResult.results) {
       if (result.success && result.data) {
-        await this.priceStorageService.saveHotelAndPrices(result.data, isMine);
-        stored++;
+        // Find the hotel in the DB by URL
+        const dbHotel = await this.prisma.hotel.findUnique({
+          where: { url: result.url },
+        });
+        if (dbHotel) {
+          await this.priceStorageService.saveHotelAndPrices(dbHotel, isMine);
+          stored++;
+        }
       }
     }
     return {
@@ -166,4 +180,4 @@ export class ScraperController {
       throw new BadRequestException('Erreur lors du scraping: ' + e.message);
     }
   }
-} 
+}

@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { ScrapedHotel } from './types';
+import { DailyPriceData, ScrapedHotel } from './types';
+import { Hotel } from 'src/hotel/hotel.model';
 
 @Injectable()
 export class PriceStorageService {
@@ -13,16 +14,12 @@ export class PriceStorageService {
    * @param scraped ScrapedHotel (données issues du scraping)
    * @param isMyHotel true si c'est ton propre hôtel, false pour un concurrent
    */
-  async saveHotelAndPrices(scraped: ScrapedHotel, isMyHotel = false): Promise<void> {
-      // 1. Ne pas mettre à jour les infos de l'hôtel, seulement créer si non existant
-    const dbHotel = await this.prisma.hotel.upsert({
-      where: { url: scraped.hotel.url },
-        update: {}, // Ne met à jour aucun champ, ne touche pas l'adresse, etc.
-      create: {
-        ...scraped.hotel,
-        isCompetitor: !isMyHotel,
-      },
+  async saveHotelAndPrices(scraped: Hotel, isMyHotel = false): Promise<void> {
+    const dbHotel = await this.prisma.hotel.findUnique({
+      where: { id: scraped.id },
     });
+    console.log('dbHotel', dbHotel);
+    if (!dbHotel) throw new NotFoundException('Hotel not found');
 
     // 2. Pour chaque prix journalier, n'insérer que si le prix a changé
     for (const daily of scraped.dailyPrices) {
@@ -46,7 +43,38 @@ export class PriceStorageService {
             scrapedAt: new Date(),
           },
         });
-        this.logger.log(`💾 Nouveau prix inséré pour ${scraped.hotel.name} le ${daily.date}: ${daily.price} ${daily.currency}`);
+        this.logger.log(`💾 Nouveau prix inséré pour ${scraped.name} le ${daily.date}: ${daily.price} ${daily.currency}`);
+      }
+    }
+  }
+
+  async saveHotelPricesOnly(hotelId: number, dailyPrices: DailyPriceData[]): Promise<void> {
+    const dbHotel = await this.prisma.hotel.findUnique({
+      where: { id: hotelId },
+    });
+    if (!dbHotel) throw new NotFoundException('Hotel not found');
+
+    for (const daily of dailyPrices) {
+      const existing = await this.prisma.dailyPrice.findFirst({
+        where: {
+          hotelId: dbHotel.id,
+          roomCategoryId: null,
+          date: new Date(daily.date),
+          price: daily.price,
+        },
+      });
+      if (!existing) {
+        await this.prisma.dailyPrice.create({
+          data: {
+            hotelId: dbHotel.id,
+            roomCategoryId: null,
+            date: new Date(daily.date),
+            price: daily.price,
+            currency: daily.currency,
+            availability: daily.availability,
+            scrapedAt: new Date(),
+          },
+        });
       }
     }
   }

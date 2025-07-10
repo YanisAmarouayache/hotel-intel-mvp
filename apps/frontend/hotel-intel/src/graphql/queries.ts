@@ -83,11 +83,9 @@ export const CREATE_HOTEL = gql`
     $amenities: [String!], 
     $images: [String!], 
     $isCompetitor: Boolean
-    $url: String!
   ) {
     createHotel(
       name: $name, 
-      url: $url, 
       city: $city, 
       address: $address, 
       starRating: $starRating, 

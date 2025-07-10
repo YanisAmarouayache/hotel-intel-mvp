@@ -2,6 +2,7 @@ import { IsString, IsArray, IsUrl, ArrayMinSize, IsOptional, IsNumber, IsBoolean
 import { ApiProperty } from '@nestjs/swagger';
 
 export interface HotelData {
+  id: number; 
   name: string;
   url: string;
   address?: string;
