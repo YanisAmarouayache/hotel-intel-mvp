@@ -18,7 +18,7 @@ export class PriceStorageService {
     const dbHotel = await this.prisma.hotel.findUnique({
       where: { id: scraped.id },
     });
-    console.log('dbHotel', dbHotel);
+    this.logger.debug(`Fetched hotel from database: ${JSON.stringify(dbHotel)}`);
     if (!dbHotel) throw new NotFoundException('Hotel not found');
 
     // 2. Pour chaque prix journalier, n'insérer que si le prix a changé
