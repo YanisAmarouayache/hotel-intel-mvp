@@ -1,66 +1,65 @@
 import React from 'react';
+import { useQuery } from "@apollo/client";
+import { useNavigate } from "react-router-dom";
 import {
   Grid,
   Typography,
   Box,
   Paper,
-} from '@mui/material';
-import {
-  TrendingUp,
-  Hotel,
-  Euro,
-  Analytics,
-} from '@mui/icons-material';
-import { StatsGrid } from '../components/Dashboard';
-import type { DashboardStats } from '../types';
+  Button,
+  CircularProgress,
+} from "@mui/material";
+import { TrendingUp, Hotel, Euro, Analytics } from "@mui/icons-material";
+import { StatsGrid } from "../components/Dashboard";
+import type { DashboardStats } from "../types";
+import { DASHBOARD_STATS_QUERY } from "../graphql/queries";
+
+const iconMap = {
+  Hotel: <Hotel color="primary" />,
+  Euro: <Euro color="success" />,
+  TrendingUp: <TrendingUp color="warning" />,
+  Analytics: <Analytics color="info" />,
+  Default: <Analytics color="disabled" />,
+};
 
 const DashboardPage: React.FC = () => {
-  const stats: DashboardStats[] = [
-    {
-      title: 'Hôtels Surveillés',
-      value: '12',
-      icon: <Hotel color="primary" />,
-      color: 'primary.main',
-      trend: { value: 8.5, isPositive: true },
-    },
-    {
-      title: 'Prix Moyen',
-      value: '€145',
-      icon: <Euro color="success" />,
-      color: 'success.main',
-      trend: { value: 2.3, isPositive: true },
-    },
-    {
-      title: 'Évolution Prix',
-      value: '+8.5%',
-      icon: <TrendingUp color="warning" />,
-      color: 'warning.main',
-      trend: { value: 8.5, isPositive: true },
-    },
-    {
-      title: 'Analyses Actives',
-      value: '5',
-      icon: <Analytics color="info" />,
-      color: 'info.main',
-    },
-  ];
+  const navigate = useNavigate();
+  const { data, loading, error, refetch } = useQuery(DASHBOARD_STATS_QUERY);
+
+  if (loading)
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <CircularProgress />
+      </Box>
+    );
+
+  if (error)
+    return (
+      <Box>
+        <Typography color="error">Erreur: {error.message}</Typography>
+        <Button onClick={() => refetch()}>Réessayer</Button>
+      </Box>
+    );
+
+  const stats: DashboardStats[] = (data?.dashboardStats || []).map(
+    (s: any) => ({
+      ...s,
+      icon: iconMap[s.icon as keyof typeof iconMap] || iconMap.Default,
+    })
+  );
 
   return (
     <Box>
-      <Typography 
-        variant="h4" 
-        component="h1" 
-        gutterBottom 
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
         sx={{ fontWeight: 700 }}
       >
         Dashboard
       </Typography>
-      
-      <Typography 
-        variant="body1" 
-        color="text.secondary" 
-        sx={{ mb: 4 }}
-      >
+
+      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         Vue d'ensemble de votre stratégie hôtelière
       </Typography>
 
@@ -76,9 +75,26 @@ const DashboardPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary">
               Ajoutez rapidement un compétiteur ou consultez vos analyses
             </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => navigate("/add-competitor")}
+              >
+                Ajouter un compétiteur
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                sx={{ ml: 2 }}
+                onClick={() => navigate("/analyses")}
+              >
+                Voir mes analyses
+              </Button>
+            </Box>
           </Paper>
         </Grid>
-        
+
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
@@ -94,4 +110,4 @@ const DashboardPage: React.FC = () => {
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

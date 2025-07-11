@@ -200,3 +200,18 @@ export const DELETE_HOTEL = gql`
     }
   }
 `; 
+
+export const DASHBOARD_STATS_QUERY = gql`
+  query GetDashboardStats {
+    dashboardStats {
+      title
+      value
+      icon
+      color
+      trend {
+        value
+        isPositive
+      }
+    }
+  }
+`;
