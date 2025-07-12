@@ -44,6 +44,8 @@ export interface ScrapingResult {
 }
 
 export interface BatchScrapingResult {
+  stored: number;
+  message: string;
   results: ScrapingResult[];
   totalHotels: number;
   successfulScrapes: number;

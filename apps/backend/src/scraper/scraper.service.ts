@@ -142,7 +142,9 @@ export class ScraperService {
       totalHotels: urls.length,
       successfulScrapes,
       failedScrapes,
-      duration
+      duration,
+      stored: 0,
+      message: ''
     };
 
     this.logger.log(`\n📊 Batch scraping completed:`);

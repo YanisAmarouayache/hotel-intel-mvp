@@ -1,12 +1,17 @@
 import { Resolver, Query, Mutation, Args, Int, ResolveField, Parent } from '@nestjs/graphql';
 import { HotelService } from './hotel.service';
-import { DailyPrice, Hotel } from './hotel.model';
+import { BatchScrapingResult, DailyPrice, Hotel } from './hotel.model';
 import { PrismaService } from '../prisma/prisma.service';
 import { endOfDay, startOfDay } from 'date-fns';
+import { ScraperService } from '../scraper/scraper.service'; 
 
 @Resolver(() => Hotel)
 export class HotelResolver {
-  constructor(private readonly hotelService: HotelService, private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly hotelService: HotelService,
+    private readonly prisma: PrismaService,
+    private readonly scraperService: ScraperService
+  ) { }
 
   @Query(() => [Hotel])
   async hotels(): Promise<Hotel[]> {
@@ -133,5 +138,36 @@ export class HotelResolver {
       },
       orderBy: { scrapedAt: 'desc' },
     });
+  }
+
+  @Mutation(() => BatchScrapingResult)
+  async scrapeAndStoreBatch(
+    @Args({ name: 'hotelIds', type: () => [Int] }) hotelIds: number[]
+  ): Promise<BatchScrapingResult> {
+    // 1. Récupérer les URLs des hôtels à partir des IDs
+    const hotels = await this.prisma.hotel.findMany({
+      where: { id: { in: hotelIds } },
+      select: { id: true, url: true },
+    });
+
+    const idToUrl = new Map(hotels.map(h => [h.id, h.url]));
+    const urls = hotelIds.map(id => idToUrl.get(id)).filter(Boolean);
+
+    // 2. Appeler le service de scraping avec les URLs
+    const result = await this.scraperService.scrapeMultipleHotels(urls);
+
+    // 3. Adapter le résultat au format GraphQL attendu
+    return {
+      results: hotels.map((hotel, idx) => {
+        const res = result.results?.[idx];
+        return {
+          hotelId: hotel.id,
+          success: res?.success ?? false,
+          error: res?.error ?? null,
+        };
+      }),
+      stored: result.stored ?? 0,
+      message: result.message ?? '',
+    };
   }
 }
