@@ -215,3 +215,36 @@ export const DASHBOARD_STATS_QUERY = gql`
     }
   }
 `;
+
+export const LATEST_PRICES_QUERY = gql`
+  query LatestPrices {
+    hotels {
+      id
+      name
+      latestPrice {
+        price
+        date
+        scrapedAt
+      }
+      previousPrice {
+        price
+        date
+        scrapedAt
+      }
+    }
+  }
+`;
+
+export const SCRAPE_AND_STORE_BATCH_MUTATION = gql`
+  mutation ScrapeAndStoreBatch($hotelIds: [Int!]!) {
+    scrapeAndStoreBatch(hotelIds: $hotelIds) {
+      stored
+      results {
+        hotelId
+        success
+        error
+      }
+      message
+    }
+  }
+`;

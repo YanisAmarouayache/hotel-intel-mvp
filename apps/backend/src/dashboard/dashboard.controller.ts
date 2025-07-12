@@ -62,4 +62,22 @@ export class DashboardController {
       throw new InternalServerErrorException('Failed to fetch dashboard stats');
     }
   }
+
+    @Get('latest-prices')
+    async getLatestPrices() {
+        const hotels = await this.prisma.hotel.findMany({
+            include: {
+                dailyPrices: {
+                    orderBy: { date: 'desc' },
+                    take: 1,
+                },
+            },
+        });
+        return hotels.map(hotel => ({
+            id: hotel.id,
+            name: hotel.name,
+            latestPrice: hotel.dailyPrices[0]?.price ?? null,
+            latestDate: hotel.dailyPrices[0]?.date ?? null,
+        }));
+    }
 }

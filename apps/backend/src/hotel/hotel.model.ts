@@ -97,4 +97,10 @@ export class Hotel {
 
   @Field()
   updatedAt: Date;
-} 
+
+  @Field(() => DailyPrice, { nullable: true })
+  latestPrice?: DailyPrice;
+
+  @Field(() => DailyPrice, { nullable: true })
+  previousPrice?: DailyPrice;
+}

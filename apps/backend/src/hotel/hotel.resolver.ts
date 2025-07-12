@@ -1,10 +1,12 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int, ResolveField, Parent } from '@nestjs/graphql';
 import { HotelService } from './hotel.service';
-import { Hotel } from './hotel.model';
+import { DailyPrice, Hotel } from './hotel.model';
+import { PrismaService } from '../prisma/prisma.service';
+import { endOfDay, startOfDay } from 'date-fns';
 
 @Resolver(() => Hotel)
 export class HotelResolver {
-  constructor(private readonly hotelService: HotelService) {}
+  constructor(private readonly hotelService: HotelService, private readonly prisma: PrismaService) { }
 
   @Query(() => [Hotel])
   async hotels(): Promise<Hotel[]> {
@@ -79,4 +81,34 @@ export class HotelResolver {
   async deleteHotel(@Args('id', { type: () => Int }) id: number): Promise<Hotel> {
     return this.hotelService.delete(id);
   }
-} 
+
+  @ResolveField('latestPrice', () => DailyPrice, { nullable: true })
+  async getLatestPrice(@Parent() hotel: Hotel) {
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+  }
+
+  @ResolveField('previousPrice', () => DailyPrice, { nullable: true })
+  async getPreviousPrice(@Parent() hotel: Hotel) {
+    const today = startOfDay(new Date());
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: { lt: today },
+      },
+      orderBy: { date: 'desc' },
+    });
+  }
+}

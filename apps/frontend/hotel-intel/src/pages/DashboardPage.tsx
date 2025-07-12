@@ -1,5 +1,5 @@
-import React from 'react';
-import { useQuery } from "@apollo/client";
+import React from "react";
+import { useQuery, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import {
   Grid,
@@ -9,24 +9,61 @@ import {
   Button,
   CircularProgress,
 } from "@mui/material";
-import { TrendingUp, Hotel, Euro, Analytics } from "@mui/icons-material";
+import { Refresh } from "@mui/icons-material";
 import { StatsGrid } from "../components/Dashboard";
+import { PriceTable } from "../components/PriceTable";
+import { QuickActions } from "../components/QuickActions";
+import {
+  DASHBOARD_STATS_QUERY,
+  LATEST_PRICES_QUERY,
+  SCRAPE_AND_STORE_BATCH_MUTATION,
+} from "../graphql/queries";
 import type { DashboardStats } from "../types";
-import { DASHBOARD_STATS_QUERY } from "../graphql/queries";
+import HotelIcon from "@mui/icons-material/Hotel";
+import EuroIcon from "@mui/icons-material/Euro";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import RemoveIcon from "@mui/icons-material/Remove";
 
 const iconMap = {
-  Hotel: <Hotel color="primary" />,
-  Euro: <Euro color="success" />,
-  TrendingUp: <TrendingUp color="warning" />,
-  Analytics: <Analytics color="info" />,
-  Default: <Analytics color="disabled" />,
+  Hotel: HotelIcon,
+  Euro: EuroIcon,
+  TrendingUp: TrendingUpIcon,
+  Analytics: AnalyticsIcon,
+  Default: HelpOutlineIcon,
 };
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { data, loading, error, refetch } = useQuery(DASHBOARD_STATS_QUERY);
+  const {
+    data: pricesData,
+    loading: pricesLoading,
+    refetch: refetchPrices,
+  } = useQuery(LATEST_PRICES_QUERY);
 
-  if (loading)
+  const [scrapeAndStoreBatch, { loading: scraping }] = useMutation(
+    SCRAPE_AND_STORE_BATCH_MUTATION,
+    {
+      onCompleted: () => refetchPrices(),
+      onError: (err) => {
+        // Optionally show error to user
+        alert("Erreur lors du scraping: " + err.message);
+      },
+    }
+  );
+
+  // Scrape all hotels handler
+  const handleScrapeAll = async () => {
+    const hotelIds = pricesData?.hotels?.map((h: any) => h.id) || [];
+    if (hotelIds.length === 0) return;
+    await scrapeAndStoreBatch({ variables: { hotelIds } });
+  };
+
+  if (loading || pricesLoading)
     return (
       <Box display="flex" justifyContent="center" mt={4}>
         <CircularProgress />
@@ -41,12 +78,13 @@ const DashboardPage: React.FC = () => {
       </Box>
     );
 
-  const stats: DashboardStats[] = (data?.dashboardStats || []).map(
-    (s: any) => ({
+  const stats: DashboardStats[] = (data?.dashboardStats || []).map((s: any) => {
+    const Icon = iconMap[s.icon as keyof typeof iconMap] || iconMap.Default;
+    return {
       ...s,
-      icon: iconMap[s.icon as keyof typeof iconMap] || iconMap.Default,
-    })
-  );
+      icon: <Icon />,
+    };
+  });
 
   return (
     <Box>
@@ -64,48 +102,12 @@ const DashboardPage: React.FC = () => {
       </Typography>
 
       <StatsGrid stats={stats} />
-
-      {/* Quick Actions */}
-      <Grid container spacing={3} sx={{ mt: 4 }}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Actions Rapides
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Ajoutez rapidement un compétiteur ou consultez vos analyses
-            </Typography>
-            <Box sx={{ mt: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => navigate("/add-competitor")}
-              >
-                Ajouter un compétiteur
-              </Button>
-              <Button
-                variant="outlined"
-                color="secondary"
-                sx={{ ml: 2 }}
-                onClick={() => navigate("/analyses")}
-              >
-                Voir mes analyses
-              </Button>
-            </Box>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-              Recommandations
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Vos hôtels sont bien positionnés par rapport à la concurrence
-            </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
+      <PriceTable hotels={pricesData?.hotels || []} />
+      <QuickActions
+        navigate={navigate}
+        handleScrapeAll={handleScrapeAll}
+        scraping={scraping}
+      />
     </Box>
   );
 };
