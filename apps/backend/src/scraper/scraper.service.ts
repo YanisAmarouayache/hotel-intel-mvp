@@ -58,63 +58,51 @@ export class ScraperService {
    * Scrape a hotel and return the data (no DB logic)
    * @param url URL of the hotel to scrape
    */
-  async scrapeHotel(url: string): Promise<ScrapingResult> {
+  async scrapeHotel(url: string): Promise<{
+    success: boolean;
+    dailyPrices: DailyPriceData[];
+    scrapedAt: string;
+    url: string;
+    error?: string;
+  }> {
     if (!this.page) {
       await this.initialize();
     }
 
     const startTime = Date.now();
-    this.logger.log(`🏨 Starting to scrape: ${url}`);
+    this.logger.log(`🏨 Starting to scrape prices: ${url}`);
 
-    // Reset GraphQL responses for each hotel
     this.graphqlResponses = [];
 
     try {
-      // Set up GraphQL response listener BEFORE navigating
       this.setupGraphQLListener();
-
-      // Navigate to the hotel page (use networkidle for more reliability)
-      await this.page.goto(url, { 
-        waitUntil: 'networkidle', // More reliable for dynamic content
-        timeout: 30000 // Restore to 30s for slow pages
-      });
+      await this.page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
       this.logger.log('📄 Page loaded successfully');
 
-      // Extract hotel details
-      const hotelData = await this.extractHotelDetails();
-      this.logger.log(`🏨 Hotel: ${hotelData.name}`);
-
-      // Click on date picker to trigger GraphQL requests
       await this.clickDatePicker();
       this.logger.log('📅 Date picker clicked');
 
-      // Wait for and extract pricing data
       const dailyPrices = await this.extractPricingData();
       this.logger.log(`💰 Found ${dailyPrices.length} daily prices`);
 
-
-
-
-      const scrapedHotel: ScrapedHotel = {
-        hotel: hotelData,
-        dailyPrices: dailyPrices,
-        scrapedAt: new Date().toISOString()
-      };
-
+      const scrapedAt = new Date().toISOString();
       const duration = Date.now() - startTime;
-      this.logger.log(`✅ Scraping completed in ${duration}ms`);
+      this.logger.log(`✅ Price scraping completed in ${duration}ms`);
 
       return {
         success: true,
-        data: scrapedHotel,
-        url
+        dailyPrices,
+        scrapedAt,
+        url,
       };
     } catch (error) {
-      this.logger.error(`❌ Error scraping ${url}:`, error);
+      this.logger.error(`❌ Error scraping prices for ${url}:`, error);
       return {
         success: false,
+        dailyPrices: [],
+        scrapedAt: new Date().toISOString(),
+        url,
         error: error instanceof Error ? error.message : 'Unknown error',
-        url
       };
     }
   }
@@ -154,7 +142,9 @@ export class ScraperService {
       totalHotels: urls.length,
       successfulScrapes,
       failedScrapes,
-      duration
+      duration,
+      stored: 0,
+      message: ''
     };
 
     this.logger.log(`\n📊 Batch scraping completed:`);
@@ -197,6 +187,8 @@ export class ScraperService {
       name: '',
       url: this.page.url(),
       city: 'Unknown' // Default value, will be extracted
+      ,
+      id: 0
     };
 
     try {
@@ -661,4 +653,4 @@ export class ScraperService {
     }
     this.logger.log('🔒 Browser closed');
   }
-} 
+}

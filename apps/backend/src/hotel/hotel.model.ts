@@ -97,4 +97,34 @@ export class Hotel {
 
   @Field()
   updatedAt: Date;
-} 
+
+  @Field(() => DailyPrice, { nullable: true })
+  latestPrice?: DailyPrice;
+
+  @Field(() => DailyPrice, { nullable: true })
+  previousPrice?: DailyPrice;
+}
+
+@ObjectType()
+export class BatchScrapingResultItem {
+  @Field(() => Int)
+  hotelId: number;
+
+  @Field()
+  success: boolean;
+
+  @Field({ nullable: true })
+  error?: string;
+}
+
+@ObjectType()
+export class BatchScrapingResult {
+  @Field(() => [BatchScrapingResultItem])
+  results: BatchScrapingResultItem[];
+
+  @Field(() => Int)
+  stored: number;
+
+  @Field()
+  message: string;
+}

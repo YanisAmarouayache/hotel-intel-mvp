@@ -75,7 +75,7 @@ const HotelCard: React.FC<HotelCardProps> = ({ hotel, onDelete, refetchHotels })
       });
     }, 200);
     try {
-      const res = await scrapePricesForHotel(hotel.url);
+      const res = await scrapePricesForHotel(hotel.id);
       setScrapeResult({
         total: res.data?.dailyPrices?.length || res.data?.daily_prices?.length || 0,
         updated: res.updated || 0,

@@ -2,6 +2,7 @@ import { IsString, IsArray, IsUrl, ArrayMinSize, IsOptional, IsNumber, IsBoolean
 import { ApiProperty } from '@nestjs/swagger';
 
 export interface HotelData {
+  id: number; 
   name: string;
   url: string;
   address?: string;
@@ -43,6 +44,8 @@ export interface ScrapingResult {
 }
 
 export interface BatchScrapingResult {
+  stored: number;
+  message: string;
   results: ScrapingResult[];
   totalHotels: number;
   successfulScrapes: number;
@@ -73,6 +76,17 @@ export class ScrapeBatchDto {
   @ArrayMinSize(1)
   @IsUrl({}, { each: true })
   urls: string[];
+}
+
+export class ScrapeBatchByIdDto {
+  @ApiProperty({
+    description: 'Array of hotel IDs to scrape',
+    example: [12345, 67890],
+    type: [Number]
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  hotelIds: number[];
 }
 
 // DTOs for hotel management
@@ -156,4 +170,4 @@ export class CreateDailyPriceDto {
   @IsOptional()
   @IsString()
   roomCategory?: string;
-} 
+}

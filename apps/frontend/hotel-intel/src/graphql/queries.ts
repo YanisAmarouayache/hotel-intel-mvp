@@ -83,11 +83,9 @@ export const CREATE_HOTEL = gql`
     $amenities: [String!], 
     $images: [String!], 
     $isCompetitor: Boolean
-    $url: String!
   ) {
     createHotel(
       name: $name, 
-      url: $url, 
       city: $city, 
       address: $address, 
       starRating: $starRating, 
@@ -202,3 +200,52 @@ export const DELETE_HOTEL = gql`
     }
   }
 `; 
+
+export const DASHBOARD_STATS_QUERY = gql`
+  query GetDashboardStats {
+    dashboardStats {
+      title
+      value
+      icon
+      color
+      trend {
+        value
+        isPositive
+      }
+    }
+  }
+`;
+
+export const LATEST_PRICES_QUERY = gql`
+  query LatestPrices {
+    hotels {
+      id
+      name
+      isCompetitor
+      latestPrice {
+        price
+        date
+        scrapedAt
+      }
+      previousPrice {
+        price
+        date
+        scrapedAt
+      }
+    }
+  }
+`;
+
+export const SCRAPE_AND_STORE_BATCH_MUTATION = gql`
+  mutation ScrapeAndStoreBatch($hotelIds: [Int!]!) {
+    scrapeAndStoreBatch(hotelIds: $hotelIds) {
+      stored
+      results {
+        hotelId
+        success
+        error
+      }
+      message
+    }
+  }
+`;
