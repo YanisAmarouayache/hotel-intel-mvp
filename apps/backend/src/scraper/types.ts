@@ -76,6 +76,17 @@ export class ScrapeBatchDto {
   urls: string[];
 }
 
+export class ScrapeBatchByIdDto {
+  @ApiProperty({
+    description: 'Array of hotel IDs to scrape',
+    example: [12345, 67890],
+    type: [Number]
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  hotelIds: number[];
+}
+
 // DTOs for hotel management
 export class CreateHotelDto {
   @ApiProperty({ description: 'Hotel name' })
@@ -157,4 +168,4 @@ export class CreateDailyPriceDto {
   @IsOptional()
   @IsString()
   roomCategory?: string;
-} 
+}
