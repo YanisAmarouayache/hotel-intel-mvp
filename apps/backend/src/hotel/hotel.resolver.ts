@@ -102,13 +102,36 @@ export class HotelResolver {
 
   @ResolveField('previousPrice', () => DailyPrice, { nullable: true })
   async getPreviousPrice(@Parent() hotel: Hotel) {
-    const today = startOfDay(new Date());
+    // On récupère le dernier prix du jour (latestPrice)
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    // On récupère le dernier prix scrappé aujourd'hui
+    const latest = await this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+
+    if (!latest) return null;
+
+    // On cherche le prix du même jour, scrappé juste avant le dernier
     return this.prisma.dailyPrice.findFirst({
       where: {
         hotelId: hotel.id,
-        date: { lt: today },
+        date: {
+          gte: start,
+          lte: end,
+        },
+        scrapedAt: { lt: latest.scrapedAt },
       },
-      orderBy: { date: 'desc' },
+      orderBy: { scrapedAt: 'desc' },
     });
   }
 }

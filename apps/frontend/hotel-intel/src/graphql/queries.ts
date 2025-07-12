@@ -221,6 +221,7 @@ export const LATEST_PRICES_QUERY = gql`
     hotels {
       id
       name
+      isCompetitor
       latestPrice {
         price
         date

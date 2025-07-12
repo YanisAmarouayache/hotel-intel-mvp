@@ -1,129 +1,240 @@
 import React from "react";
 import {
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Paper, Chip, Tooltip, Avatar, Box, Typography
+  Box,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Avatar,
+  Tooltip,
+  Chip,
 } from "@mui/material";
 import HotelIcon from "@mui/icons-material/Hotel";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import RemoveIcon from "@mui/icons-material/Remove";
+import TrendingFlatIcon from "@mui/icons-material/TrendingFlat";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import StarIcon from "@mui/icons-material/Star";
+import type { Hotel } from "../types";
 
-export const PriceTable = ({ hotels }: { hotels: any[] }) => (
-  <Paper sx={{ mt: 4, mb: 4, borderRadius: 3, boxShadow: 3 }}>
-    <Typography variant="h6" sx={{ fontWeight: 600, p: 2 }}>
-      Derniers prix scrapés
-    </Typography>
-    <TableContainer>
-      <Table>
-        <TableHead>
-          <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-            <TableCell>Hôtel</TableCell>
-            <TableCell>Dernier prix</TableCell>
-            <TableCell>Date de mise à jour</TableCell>
-            <TableCell>Variation</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {hotels.map((hotel: any) => {
-            const latest = hotel.latestPrice?.price;
-            const prev = hotel.previousPrice?.price;
-            const latestDate = hotel.latestPrice?.scrapedAt;
-            let trend: "up" | "down" | "same" | null = null;
-            let percent = null;
-            let evolutionDate = null;
+const getTrendProps = (trend: "up" | "down" | "same" | null) => {
+  if (trend === "up")
+    return {
+      icon: <TrendingUpIcon sx={{ color: "success.main" }} />,
+      color: "success.main",
+    };
+  if (trend === "down")
+    return {
+      icon: <TrendingDownIcon sx={{ color: "error.main" }} />,
+      color: "error.main",
+    };
+  if (trend === "same")
+    return {
+      icon: <TrendingFlatIcon sx={{ color: "grey.600" }} />,
+      color: "grey.700",
+    };
+  return {
+    icon: null,
+    color: "grey.400",
+  };
+};
 
-            if (latest != null && prev != null) {
-              if (latest > prev) trend = "up";
-              else if (latest < prev) trend = "down";
-              else trend = "same";
-              if (trend !== "same") {
-                percent = (((latest - prev) / prev) * 100).toFixed(1);
-                evolutionDate = latestDate;
+export const PriceTable = ({ hotels }: { hotels: Hotel[] }) => {
+  return (
+    <Box sx={{ mt: 4, mb: 4 }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontWeight: 700,
+          mb: 3,
+          color: "primary.main",
+          letterSpacing: 0.5,
+        }}
+      >
+        Prix du jour <span>{new Date().toLocaleDateString("fr-FR")}</span>
+      </Typography>
+      <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ background: "#f5f5f5" }}>
+              <TableCell>Hôtel</TableCell>
+              <TableCell align="center">Dernier prix</TableCell>
+              <TableCell align="center">Variation</TableCell>
+              <TableCell align="center">Date évolution</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {hotels.map((hotel: any) => {
+              const latest = hotel.latestPrice?.price;
+              const prev = hotel.previousPrice?.price;
+              const latestDate = hotel.latestPrice?.scrapedAt;
+              let trend: "up" | "down" | "same" | null = null;
+              let percent = null;
+              let evolutionDate = null;
+
+              if (latest != null && prev != null) {
+                if (latest > prev) trend = "up";
+                else if (latest < prev) trend = "down";
+                else trend = "same";
+                if (trend !== "same") {
+                  percent = (((latest - prev) / prev) * 100).toFixed(1);
+                  evolutionDate = latestDate;
+                }
               }
-            }
 
-            return (
-              <TableRow key={hotel.id} hover>
-                <TableCell>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main" }}>
-                      <HotelIcon fontSize="small" />
-                    </Avatar>
-                    <Tooltip title={hotel.name}>
-                      <Typography variant="subtitle2" noWrap>
-                        {hotel.name}
-                      </Typography>
-                    </Tooltip>
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  {latest ? (
-                    <Chip
-                      label={`€${latest}`}
-                      color="success"
-                      sx={{ fontWeight: 600, fontSize: 16 }}
-                    />
-                  ) : (
-                    <Chip label="N/A" color="default" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {latestDate ? (
-                    <Chip
-                      label={new Date(latestDate).toLocaleDateString("fr-FR", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "2-digit",
-                      })}
-                      color="info"
-                      variant="outlined"
-                    />
-                  ) : (
-                    <Chip label="N/A" color="default" />
-                  )}
-                </TableCell>
-                <TableCell>
-                  {trend === "up" && (
+              const isMine = !hotel.isCompetitor;
+              const trendProps = getTrendProps(trend);
+
+              return (
+                <TableRow
+                  key={hotel.id}
+                  sx={
+                    isMine
+                      ? {
+                          background: "#fffde7",
+                          fontWeight: 700,
+                        }
+                      : {}
+                  }
+                >
+                  <TableCell>
                     <Box display="flex" alignItems="center" gap={1}>
-                      <ArrowUpwardIcon sx={{ color: "error.main" }} />
-                      <Typography color="error.main" fontWeight={600}>
-                        +{percent}%
-                      </Typography>
-                      {evolutionDate && (
-                        <Typography variant="caption" color="text.secondary">
-                          ({new Date(evolutionDate).toLocaleString("fr-FR")})
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: isMine ? "#bfa13a" : "primary.main",
+                          color: "#fff",
+                          fontWeight: 700,
+                          border: isMine ? "2px solid #bfa13a" : undefined,
+                        }}
+                      >
+                        <HotelIcon fontSize="small" />
+                      </Avatar>
+                      <Tooltip title={hotel.name}>
+                        <Typography
+                          variant="subtitle2"
+                          noWrap
+                          sx={{
+                            fontWeight: isMine ? 800 : 600,
+                            color: isMine ? "#bfa13a" : "text.primary",
+                          }}
+                        >
+                          {hotel.name}
+                          {isMine && (
+                            <span
+                              style={{
+                                marginLeft: 6,
+                                fontSize: 12,
+                                color: "#bfa13a",
+                                fontWeight: 700,
+                              }}
+                            >
+                              (Moi)
+                            </span>
+                          )}
                         </Typography>
+                      </Tooltip>
+                      {isMine && (
+                        <StarIcon
+                          sx={{
+                            fontSize: 20,
+                            color: "#bfa13a",
+                            ml: 1,
+                          }}
+                        />
                       )}
                     </Box>
-                  )}
-                  {trend === "down" && (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <ArrowDownwardIcon sx={{ color: "success.main" }} />
-                      <Typography color="success.main" fontWeight={600}>
-                        {percent}%
-                      </Typography>
-                      {evolutionDate && (
-                        <Typography variant="caption" color="text.secondary">
-                          ({new Date(evolutionDate).toLocaleString("fr-FR")})
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" flexDirection="column" alignItems="center">
+                      {prev && prev !== latest && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            textDecoration: "line-through",
+                            color: "grey.500",
+                            fontSize: 13,
+                            mb: 0.2,
+                          }}
+                        >
+                          €{prev}
                         </Typography>
                       )}
+                      <Chip
+                        label={latest ? `€${latest}` : "N/A"}
+                        color={isMine ? "default" : "primary"}
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: 16,
+                          bgcolor: isMine ? "#f9f6ee" : "#f5faff",
+                          color: isMine ? "#bfa13a" : "primary.main",
+                          border: isMine ? "1.5px solid #bfa13a" : undefined,
+                        }}
+                      />
                     </Box>
-                  )}
-                  {trend === "same" && (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <RemoveIcon sx={{ color: "grey.500" }} />
-                      <Typography color="text.secondary" fontWeight={600}>
-                        Stable
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      gap={1}
+                    >
+                      {trendProps.icon}
+                      {trend === "up" && (
+                        <Typography
+                          sx={{
+                            color: trendProps.color,
+                            fontWeight: 700,
+                          }}
+                        >
+                          +{percent}%
+                        </Typography>
+                      )}
+                      {trend === "down" && (
+                        <Typography
+                          sx={{
+                            color: trendProps.color,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {percent}%
+                        </Typography>
+                      )}
+                      {trend === "same" && (
+                        <Typography
+                          sx={{
+                            color: trendProps.color,
+                            fontWeight: 700,
+                          }}
+                        >
+                          Stable
+                        </Typography>
+                      )}
+                      {trend === null && <Chip label="N/A" size="small" />}
+                    </Box>
+                  </TableCell>
+                  <TableCell align="center">
+                    {evolutionDate && trend !== "same" ? (
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(evolutionDate).toLocaleString("fr-FR")}
                       </Typography>
-                    </Box>
-                  )}
-                  {trend === null && <Chip label="N/A" />}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  </Paper>
-);
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        -
+                      </Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  );
+};
