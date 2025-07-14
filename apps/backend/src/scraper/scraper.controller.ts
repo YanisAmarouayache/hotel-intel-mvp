@@ -6,6 +6,14 @@ import { ScrapeHotelDto, ScrapeBatchDto, ScrapeBatchByIdDto, ScrapingResult, Bat
 import scrapeBooking from './scrape-booking';
 import { PrismaService } from '../prisma/prisma.service'; // Adjust the path as needed
 
+const batchProgress: Record<string, {
+  total: number;
+  done: number;
+  hotels: { id: string; name: string; url: string }[];
+  current?: { index: number; hotelId: string; name: string; url: string };
+  results: { hotelId: string; name: string; url: string; success: boolean; error?: string; data?: any }[];
+  finalResult?: any;
+}> = {};
 
 @ApiTags('scraper')
 @Controller('scraper')
@@ -114,6 +122,8 @@ export class ScraperController {
   async scrapeBatch(@Body() body: ScrapeBatchDto): Promise<BatchScrapingResult> {
     return this.scraperService.scrapeMultipleHotels(body.urls);
   }
+  // batchProgress is now a module-level variable above the class
+
 
   @Post('batch/scrape-and-store')
   @ApiOperation({
@@ -146,31 +156,57 @@ export class ScraperController {
     @Body() body: ScrapeBatchByIdDto,
     @Query('isMyHotel') isMyHotel?: string
   ) {
-    const isMine = isMyHotel === 'true';
-    let stored = 0;
-    let results: any[] = [];
-    for (const hotelId of body.hotelIds) {
-      const dbHotel = await this.prisma.hotel.findUnique({
-        where: { id: hotelId },
-      });
-      if (!dbHotel) {
-        results.push({ hotelId, success: false, error: 'Hotel not found' });
-        continue;
-      }
-      const scrapeResult = await this.scraperService.scrapeHotel(dbHotel.url);
-      if (scrapeResult.success) {
-        await this.priceStorageService.saveHotelPricesOnly(dbHotel.id, scrapeResult.dailyPrices);
-        stored++;
-        results.push({ hotelId, success: true });
-      } else {
-        results.push({ hotelId, success: false, error: scrapeResult.error });
-      }
-    }
-    return {
-      stored,
-      results,
-      message: `Scraped and stored ${stored} hotels out of ${body.hotelIds.length}.`
+    const batchId = Date.now().toString() + Math.random().toString(36).slice(2);
+    const hotels = await this.prisma.hotel.findMany({
+      where: { id: { in: body.hotelIds } },
+      select: { id: true, name: true, url: true }
+    });
+    batchProgress[batchId] = {
+      total: hotels.length,
+      done: 0,
+      hotels: hotels.map(hotel => ({
+        id: hotel.id.toString(),
+        name: hotel.name,
+        url: hotel.url
+
+      })),
+      results: []
     };
+
+    // Lance le traitement en tâche de fond
+    (async () => {
+      let stored = 0;
+      let results: any[] = [];
+      for (let i = 0; i < hotels.length; i++) {
+        const hotel = hotels[i];
+        batchProgress[batchId].current = { index: i, hotelId: hotel.id.toString(), name: hotel.name, url: hotel.url };
+        const scrapeResult = await this.scraperService.scrapeHotel(hotel.url);
+        if (scrapeResult.success) {
+          await this.priceStorageService.saveHotelPricesOnly(hotel.id, scrapeResult.dailyPrices);
+          stored++;
+          results.push({ hotelId: hotel.id, name: hotel.name, url: hotel.url, success: true, data: scrapeResult });
+        } else {
+          results.push({ hotelId: hotel.id, name: hotel.name, url: hotel.url, success: false, error: scrapeResult.error });
+        }
+        batchProgress[batchId].done++;
+        batchProgress[batchId].results = results;
+      }
+      batchProgress[batchId].finalResult = {
+        batchId,
+        stored,
+        results,
+        message: `Scraped and stored ${stored} hotels out of ${hotels.length}.`
+      };
+      delete batchProgress[batchId].current;
+    })();
+
+    // Retourne immédiatement le batchId
+    return { batchId };
+  }
+
+  @Get('batch/progress')
+  async getBatchProgress(@Query('batchId') batchId: string) {
+    return batchProgress[batchId] || null;
   }
 
   @Get('scrapmyhotelfrombooking')

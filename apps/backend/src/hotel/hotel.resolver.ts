@@ -105,6 +105,11 @@ export class HotelResolver {
     });
   }
 
+  @Query(() => [Hotel])
+  async hotelsWithPricesByDate(@Args('date', { type: () => String }) date: string) {
+    return this.hotelService.getHotelsWithPricesForDate(date);
+  }
+
   @ResolveField('previousPrice', () => DailyPrice, { nullable: true })
   async getPreviousPrice(@Parent() hotel: Hotel) {
     // On récupère le dernier prix du jour (latestPrice)
@@ -169,5 +174,63 @@ export class HotelResolver {
       stored: result.stored ?? 0,
       message: result.message ?? '',
     };
+  }
+
+  @ResolveField('latestPriceAtDate', () => DailyPrice, { nullable: true })
+  async getLatestPriceAtDate(
+    @Parent() hotel: Hotel,
+    @Args('date', { type: () => String }) date: string
+  ) {
+    const target = new Date(date);
+    const start = startOfDay(target);
+    const end = endOfDay(target);
+
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+  }
+
+  @ResolveField('previousPriceAtDate', () => DailyPrice, { nullable: true })
+  async getPreviousPriceAtDate(
+    @Parent() hotel: Hotel,
+    @Args('date', { type: () => String }) date: string
+  ) {
+    const target = new Date(date);
+    const start = startOfDay(target);
+    const end = endOfDay(target);
+
+    // On récupère le dernier prix scrappé à la date donnée
+    const latest = await this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+
+    if (!latest) return null;
+
+    // On cherche le prix scrappé juste avant le dernier à cette date
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+        scrapedAt: { lt: latest.scrapedAt },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
   }
 }

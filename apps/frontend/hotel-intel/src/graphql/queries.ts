@@ -199,7 +199,7 @@ export const DELETE_HOTEL = gql`
       name
     }
   }
-`; 
+`;
 
 export const DASHBOARD_STATS_QUERY = gql`
   query GetDashboardStats {
@@ -246,6 +246,24 @@ export const SCRAPE_AND_STORE_BATCH_MUTATION = gql`
         error
       }
       message
+    }
+  }
+`;
+
+export const PRICES_BY_DATE_QUERY = gql`
+ query HotelsWithPricesByDate($date: String!) {
+    hotelsWithPricesByDate(date: $date) {
+      id
+      name
+      isCompetitor
+    latestPriceAtDate(date: $date){
+      scrapedAt
+      price
+    }
+    previousPriceAtDate(date: $date) { 
+      price 
+      scrapedAt
+    }
     }
   }
 `;

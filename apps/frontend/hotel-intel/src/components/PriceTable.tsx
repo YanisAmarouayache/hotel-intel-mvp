@@ -45,17 +45,6 @@ const getTrendProps = (trend: "up" | "down" | "same" | null) => {
 export const PriceTable = ({ hotels }: { hotels: Hotel[] }) => {
   return (
     <Box sx={{ mt: 4, mb: 4 }}>
-      <Typography
-        variant="h5"
-        sx={{
-          fontWeight: 700,
-          mb: 3,
-          color: "primary.main",
-          letterSpacing: 0.5,
-        }}
-      >
-        Prix du jour <span>{new Date().toLocaleDateString("fr-FR")}</span>
-      </Typography>
       <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
         <Table>
           <TableHead>
@@ -67,10 +56,10 @@ export const PriceTable = ({ hotels }: { hotels: Hotel[] }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {hotels.map((hotel: any) => {
-              const latest = hotel.latestPrice?.price;
-              const prev = hotel.previousPrice?.price;
-              const latestDate = hotel.latestPrice?.scrapedAt;
+            {hotels.map((hotel: Hotel) => {
+              const latest = hotel.latestPriceAtDate?.price;
+              const prev = hotel.previousPriceAtDate?.price;
+              const latestDate = hotel.latestPriceAtDate?.scrapedAt;
               let trend: "up" | "down" | "same" | null = null;
               let percent = null;
               let evolutionDate = null;
@@ -150,7 +139,11 @@ export const PriceTable = ({ hotels }: { hotels: Hotel[] }) => {
                     </Box>
                   </TableCell>
                   <TableCell align="center">
-                    <Box display="flex" flexDirection="column" alignItems="center">
+                    <Box
+                      display="flex"
+                      flexDirection="column"
+                      alignItems="center"
+                    >
                       {prev && prev !== latest && (
                         <Typography
                           variant="body2"

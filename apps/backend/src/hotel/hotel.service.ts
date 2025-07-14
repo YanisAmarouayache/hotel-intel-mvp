@@ -6,6 +6,19 @@ import { Hotel } from './hotel.model';
 export class HotelService {
   constructor(private prisma: PrismaService) {}
 
+
+  async getHotelsWithPricesForDate(date: string): Promise<Hotel[]> {
+    const targetDate = new Date(date);
+    return this.prisma.hotel.findMany({
+      include: {
+        dailyPrices: {
+          where: { date: targetDate },
+        },
+      },
+    });
+  }
+
+
   async findAll(): Promise<Hotel[]> {
     return this.prisma.hotel.findMany({
       include: {
@@ -103,4 +116,4 @@ export class HotelService {
       },
     });
   }
-} 
+}
