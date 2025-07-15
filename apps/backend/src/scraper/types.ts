@@ -1,5 +1,6 @@
 import { IsString, IsArray, IsUrl, ArrayMinSize, IsOptional, IsNumber, IsBoolean, IsDateString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { UUID } from 'crypto';
 
 export interface HotelData {
   id: number; 
@@ -22,6 +23,7 @@ export interface RoomCategoryData {
 }
 
 export interface DailyPriceData {
+  id: UUID;
   date: string; // ISO date string
   price: number;
   currency: string;

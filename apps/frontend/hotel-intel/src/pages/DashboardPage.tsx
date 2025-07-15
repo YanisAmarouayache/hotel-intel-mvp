@@ -18,7 +18,7 @@ import { StatsGrid } from "../components/Dashboard";
 import { PriceTableWithDatePicker } from "../components/PriceTableWithDatePicker";
 import { QuickActions } from "../components/QuickActions";
 import { DASHBOARD_STATS_QUERY, LATEST_PRICES_QUERY } from "../graphql/queries";
-import type { DashboardStats } from "../types";
+import type { DailyPrice, DashboardStats } from "../types";
 import HotelIcon from "@mui/icons-material/Hotel";
 import EuroIcon from "@mui/icons-material/Euro";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -59,7 +59,9 @@ const DashboardPage: React.FC = () => {
   const [progressDetails, setProgressDetails] = useState<any>(null);
   const [scrapeDetailsOpen, setScrapeDetailsOpen] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogHotelData, setDialogHotelData] = useState<any>(null);
+  const [dialogHotelData, setDialogHotelData] = useState<DailyPrice[] | null>(
+    null
+  );
   const [dialogHotelName, setDialogHotelName] = useState<string | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -258,17 +260,7 @@ const DashboardPage: React.FC = () => {
         fullWidth
         PaperProps={{ sx: { position: "relative" } }}
       >
-        <DialogTitle>
-          Détails du scraping&nbsp;: {dialogHotelName}
-          <IconButton
-            size="small"
-            onClick={() => setDialogOpen(false)}
-            sx={{ position: "absolute", right: 16, top: 16 }}
-            aria-label="Fermer"
-          >
-            <ExpandLessIcon />
-          </IconButton>
-        </DialogTitle>
+        <DialogTitle>Détails du scraping&nbsp;: {dialogHotelName}</DialogTitle>
         <DialogContent>
           {dialogHotelData && (
             <ScrapingHotelDetails

@@ -164,11 +164,10 @@ export class ScraperController {
     batchProgress[batchId] = {
       total: hotels.length,
       done: 0,
-      hotels: hotels.map(hotel => ({
+      hotels: hotels.map((hotel, idx) => ({
         id: hotel.id.toString(),
         name: hotel.name,
         url: hotel.url
-
       })),
       results: []
     };

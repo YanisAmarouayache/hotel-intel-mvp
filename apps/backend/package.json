@@ -28,6 +28,7 @@
         "class-validator": "^0.14.0",
         "date-fns": "^4.1.0",
         "graphql": "^16.6.0",
+        "graphql-type-json": "^0.3.2",
         "playwright": "^1.53.1",
         "reflect-metadata": "^0.1.13",
         "swagger-ui-express": "^5.0.1",

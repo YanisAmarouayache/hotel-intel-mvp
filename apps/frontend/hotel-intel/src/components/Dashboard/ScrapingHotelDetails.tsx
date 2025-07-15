@@ -1,6 +1,7 @@
 import { Box, IconButton, Typography } from "@mui/material";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import React from "react";
+import type { DailyPrice } from "../../types";
 
 const ScrapingHotelDetails = React.memo(
   ({
@@ -12,7 +13,7 @@ const ScrapingHotelDetails = React.memo(
     data: any;
     onClose: () => void;
   }) => {
-    const sortedPrices = (data?.dailyPrices || [])
+    const sortedPrices: DailyPrice[] = (data?.dailyPrices || [])
       .slice()
       .sort((a: any, b: any) => a.date.localeCompare(b.date));
     return (
@@ -54,25 +55,25 @@ const ScrapingHotelDetails = React.memo(
                   <th>Prix</th>
                   <th>Devise</th>
                   <th>Dispo</th>
-                  <th>Catégorie</th>
                 </tr>
               </thead>
               <tbody>
-                {sortedPrices.map((p: any) => (
-                  <tr key={p.date + p.roomCategory}>
-                    <td>{p.date}</td>
-                    <td>{p.price} €</td>
-                    <td>{p.currency}</td>
-                    <td>
-                      {p.availability ? (
-                        <span style={{ color: "#388e3c" }}>✔</span>
-                      ) : (
-                        <span style={{ color: "#d32f2f" }}>✖</span>
-                      )}
-                    </td>
-                    <td>{p.roomCategory}</td>
-                  </tr>
-                ))}
+                {sortedPrices.map((p: DailyPrice) => {
+                  return (
+                    <tr key={p.hotelId + p.scrapedAt + p.id}>
+                      <td>{p.date}</td>
+                      <td>{p.price} €</td>
+                      <td>{p.currency}</td>
+                      <td>
+                        {p.availability ? (
+                          <span style={{ color: "#388e3c" }}>✔</span>
+                        ) : (
+                          <span style={{ color: "#d32f2f" }}>✖</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </Box>
             <Typography variant="caption" color="text.secondary">

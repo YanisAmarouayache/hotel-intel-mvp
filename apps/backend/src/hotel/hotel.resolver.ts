@@ -163,10 +163,13 @@ export class HotelResolver {
 
     // 3. Adapter le résultat au format GraphQL attendu
     return {
-      results: hotels.map((hotel, idx) => {
+      results: hotels.map((hotel: Hotel, idx) => {
         const res = result.results?.[idx];
         return {
           hotelId: hotel.id,
+          name: hotel.name,
+          url: hotel.url,
+          data: res?.data ?? null,
           success: res?.success ?? false,
           error: res?.error ?? null,
         };

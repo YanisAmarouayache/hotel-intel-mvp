@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 // import { PrismaService } from '../prisma/prisma.service';
 import { chromium, Browser, Page } from 'playwright';
 import { HotelData, DailyPriceData, ScrapedHotel, ScrapingResult, BatchScrapingResult } from './types';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class ScraperService {
@@ -528,6 +529,7 @@ export class ScraperService {
               
               if (price && day.checkin) {
                 pricing.push({
+                  id: randomUUID(),
                   date: day.checkin,
                   price: price,
                   currency: 'EUR',
@@ -553,6 +555,7 @@ export class ScraperService {
         for (const day of availabilityData.availability) {
           if (day.price && day.date) {
             pricing.push({
+              id: randomUUID(),
               date: day.date,
               price: parseFloat(day.price.amount || day.price),
               currency: day.price.currency || 'EUR',
@@ -568,6 +571,7 @@ export class ScraperService {
         for (const day of response.data.calendar) {
           if (day.price && day.date) {
             pricing.push({
+              id: randomUUID(),
               date: day.date,
               price: parseFloat(day.price.amount || day.price),
               currency: day.price.currency || 'EUR',
@@ -622,6 +626,7 @@ export class ScraperService {
             const priceMatch = text.match(/(\d+(?:,\d+)?(?:\.\d+)?)/);
             if (priceMatch) {
               pricing.push({
+                id: randomUUID(),
                 date: new Date().toISOString().split('T')[0], // Today's date as fallback
                 price: parseFloat(priceMatch[1].replace(',', '')),
                 currency: 'EUR',

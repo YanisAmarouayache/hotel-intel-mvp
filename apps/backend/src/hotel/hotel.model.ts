@@ -1,4 +1,6 @@
 import { ObjectType, Field, Int, Float } from '@nestjs/graphql';
+import { ScrapedHotel, ScrapingResult } from 'src/scraper/types';
+import { GraphQLJSON } from 'graphql-type-json';
 
 @ObjectType()
 export class RoomCategory {
@@ -43,6 +45,9 @@ export class DailyPrice {
 
   @Field(() => Int, { nullable: true })
   roomCategoryId?: number;
+
+  @Field({ nullable: true })
+  roomCategory?: string;
 
   @Field()
   scrapedAt: Date;
@@ -117,10 +122,19 @@ export class BatchScrapingResultItem {
   hotelId: number;
 
   @Field()
+  name: string;
+
+  @Field()
+  url: string;
+
+  @Field()
   success: boolean;
 
   @Field({ nullable: true })
   error?: string;
+
+  @Field(() => GraphQLJSON, { nullable: true }) 
+  data?: any;
 }
 
 @ObjectType()
