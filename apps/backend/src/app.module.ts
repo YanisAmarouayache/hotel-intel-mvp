@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { HotelModule } from './hotel/hotel.module';
 import { ScraperModule } from './scraper/scraper.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -17,8 +18,9 @@ import { ScraperModule } from './scraper/scraper.module';
     PrismaModule,
     HotelModule,
     ScraperModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [],
 })
-export class AppModule {} 
+export class AppModule {}

@@ -1,10 +1,17 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int, ResolveField, Parent } from '@nestjs/graphql';
 import { HotelService } from './hotel.service';
-import { Hotel } from './hotel.model';
+import { BatchScrapingResult, DailyPrice, Hotel } from './hotel.model';
+import { PrismaService } from '../prisma/prisma.service';
+import { endOfDay, startOfDay } from 'date-fns';
+import { ScraperService } from '../scraper/scraper.service'; 
 
 @Resolver(() => Hotel)
 export class HotelResolver {
-  constructor(private readonly hotelService: HotelService) {}
+  constructor(
+    private readonly hotelService: HotelService,
+    private readonly prisma: PrismaService,
+    private readonly scraperService: ScraperService
+  ) { }
 
   @Query(() => [Hotel])
   async hotels(): Promise<Hotel[]> {
@@ -79,4 +86,154 @@ export class HotelResolver {
   async deleteHotel(@Args('id', { type: () => Int }) id: number): Promise<Hotel> {
     return this.hotelService.delete(id);
   }
-} 
+
+  @ResolveField('latestPrice', () => DailyPrice, { nullable: true })
+  async getLatestPrice(@Parent() hotel: Hotel) {
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+  }
+
+  @Query(() => [Hotel])
+  async hotelsWithPricesByDate(@Args('date', { type: () => String }) date: string) {
+    return this.hotelService.getHotelsWithPricesForDate(date);
+  }
+
+  @ResolveField('previousPrice', () => DailyPrice, { nullable: true })
+  async getPreviousPrice(@Parent() hotel: Hotel) {
+    // On récupère le dernier prix du jour (latestPrice)
+    const today = new Date();
+    const start = startOfDay(today);
+    const end = endOfDay(today);
+
+    // On récupère le dernier prix scrappé aujourd'hui
+    const latest = await this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+
+    if (!latest) return null;
+
+    // On cherche le prix du même jour, scrappé juste avant le dernier
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+        scrapedAt: { lt: latest.scrapedAt },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+  }
+
+  @Mutation(() => BatchScrapingResult)
+  async scrapeAndStoreBatch(
+    @Args({ name: 'hotelIds', type: () => [Int] }) hotelIds: number[]
+  ): Promise<BatchScrapingResult> {
+    // 1. Récupérer les URLs des hôtels à partir des IDs
+    const hotels = await this.prisma.hotel.findMany({
+      where: { id: { in: hotelIds } },
+      select: { id: true, url: true },
+    });
+
+    const idToUrl = new Map(hotels.map(h => [h.id, h.url]));
+    const urls = hotelIds.map(id => idToUrl.get(id)).filter(Boolean);
+
+    // 2. Appeler le service de scraping avec les URLs
+    const result = await this.scraperService.scrapeMultipleHotels(urls);
+
+    // 3. Adapter le résultat au format GraphQL attendu
+    return {
+      results: hotels.map((hotel: Hotel, idx) => {
+        const res = result.results?.[idx];
+        return {
+          hotelId: hotel.id,
+          name: hotel.name,
+          url: hotel.url,
+          data: res?.data ?? null,
+          success: res?.success ?? false,
+          error: res?.error ?? null,
+        };
+      }),
+      stored: result.stored ?? 0,
+      message: result.message ?? '',
+    };
+  }
+
+  @ResolveField('latestPriceAtDate', () => DailyPrice, { nullable: true })
+  async getLatestPriceAtDate(
+    @Parent() hotel: Hotel,
+    @Args('date', { type: () => String }) date: string
+  ) {
+    const target = new Date(date);
+    const start = startOfDay(target);
+    const end = endOfDay(target);
+
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+  }
+
+  @ResolveField('previousPriceAtDate', () => DailyPrice, { nullable: true })
+  async getPreviousPriceAtDate(
+    @Parent() hotel: Hotel,
+    @Args('date', { type: () => String }) date: string
+  ) {
+    const target = new Date(date);
+    const start = startOfDay(target);
+    const end = endOfDay(target);
+
+    // On récupère le dernier prix scrappé à la date donnée
+    const latest = await this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+
+    if (!latest) return null;
+
+    // On cherche le prix scrappé juste avant le dernier à cette date
+    return this.prisma.dailyPrice.findFirst({
+      where: {
+        hotelId: hotel.id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+        scrapedAt: { lt: latest.scrapedAt },
+      },
+      orderBy: { scrapedAt: 'desc' },
+    });
+  }
+}

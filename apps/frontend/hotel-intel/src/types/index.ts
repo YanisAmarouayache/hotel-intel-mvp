@@ -35,6 +35,11 @@ export interface Hotel {
   images?: string[];
   isCompetitor: boolean;
   dailyPrices?: DailyPrice[];
+  latestPriceAtDate?: DailyPrice;
+  latestPriceScrapedAt?: string;
+  previousPriceAtDate?: DailyPrice;
+  latestPrice?: DailyPrice;
+  previousPrice?: DailyPrice;
   roomCategories?: RoomCategory[];
   createdAt: string;
   updatedAt: string;
