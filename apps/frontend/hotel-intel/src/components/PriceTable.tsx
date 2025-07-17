@@ -18,7 +18,7 @@ import TrendingFlatIcon from "@mui/icons-material/TrendingFlat";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import StarIcon from "@mui/icons-material/Star";
-import type { Hotel } from "../types";
+import type { HotelsWithPricesByDateQuery } from "../generated/graphql";
 
 const getTrendProps = (trend: "up" | "down" | "same" | null) => {
   if (trend === "up")
@@ -42,7 +42,11 @@ const getTrendProps = (trend: "up" | "down" | "same" | null) => {
   };
 };
 
-export const PriceTable = ({ hotels }: { hotels: Hotel[] }) => {
+export const PriceTable = ({
+  hotels,
+}: {
+  hotels: HotelsWithPricesByDateQuery["hotelsWithPricesByDate"];
+}) => {
   return (
     <Box sx={{ mt: 4, mb: 4 }}>
       <TableContainer component={Paper} sx={{ borderRadius: 3 }}>
@@ -56,7 +60,7 @@ export const PriceTable = ({ hotels }: { hotels: Hotel[] }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {hotels.map((hotel: Hotel) => {
+            {hotels.map((hotel) => {
               const latest = hotel.latestPriceAtDate?.price;
               const prev = hotel.previousPriceAtDate?.price;
               const latestDate = hotel.latestPriceAtDate?.scrapedAt;
