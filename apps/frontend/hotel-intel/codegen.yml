@@ -1,4 +1,4 @@
-schema: ${GRAPHQL_SCHEMA_URL:http://localhost:3000/graphql}
+schema: ${GRAPHQL_SCHEMA_URL}
 documents: "src/graphql/**/*.ts"
 generates:
   src/generated/graphql.tsx:
