@@ -143,7 +143,6 @@ export const UPDATE_HOTEL = gql`
     $amenities: [String!], 
     $images: [String!], 
     $isCompetitor: Boolean
-    $url: String!
   ) {
     updateHotel(
       id: $id, 
@@ -158,7 +157,6 @@ export const UPDATE_HOTEL = gql`
       amenities: $amenities, 
       images: $images, 
       isCompetitor: $isCompetitor
-      url: $url
     ) {
       id
       name

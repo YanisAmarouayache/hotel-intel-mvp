@@ -3,12 +3,13 @@ import { Box, TextField, IconButton, Typography, CircularProgress } from "@mui/m
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import dayjs from "dayjs";
-import { useQuery } from "@apollo/client";
-import { PRICES_BY_DATE_QUERY } from "../graphql/queries";
+import { useHotelsWithPricesByDateQuery } from "../generated/graphql";
 import { PriceTable } from "./PriceTable";
 
 export const PriceTableWithDatePicker: React.FC = React.memo(() => {
-  const [selectedDate, setSelectedDate] = useState(() => dayjs().format("YYYY-MM-DD"));
+  const [selectedDate, setSelectedDate] = useState(() =>
+    dayjs().format("YYYY-MM-DD")
+  );
 
   const handleChange = useCallback(
     (newDate: string) => setSelectedDate(newDate),
@@ -16,15 +17,16 @@ export const PriceTableWithDatePicker: React.FC = React.memo(() => {
   );
 
   const handlePrev = useCallback(() => {
-    setSelectedDate((date) => dayjs(date).subtract(1, "day").format("YYYY-MM-DD"));
+    setSelectedDate((date) =>
+      dayjs(date).subtract(1, "day").format("YYYY-MM-DD")
+    );
   }, []);
 
   const handleNext = useCallback(() => {
     setSelectedDate((date) => dayjs(date).add(1, "day").format("YYYY-MM-DD"));
   }, []);
 
-  // This will refetch automatically when selectedDate changes
-  const { data, loading } = useQuery(PRICES_BY_DATE_QUERY, {
+  const { data, loading } = useHotelsWithPricesByDateQuery({
     variables: { date: selectedDate },
   });
 

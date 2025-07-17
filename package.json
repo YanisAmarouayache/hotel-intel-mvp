@@ -2,16 +2,15 @@
     "name": "hotel-intel-mvp",
     "private": true,
     "workspaces": [
-      "apps/*",
-      "packages/*"
+        "apps/*",
+        "packages/*"
     ],
     "dependencies": {
-      "reflect-metadata": "^0.1.13"
+        "reflect-metadata": "^0.1.13"
     },
     "scripts": {
-      "dev:backend": "pnpm --filter backend dev",
-      "dev:frontend": "pnpm --filter frontend dev",
-      "build:all": "pnpm -r build"
+        "dev:backend": "pnpm --filter backend dev",
+        "dev:frontend": "pnpm --filter frontend dev",
+        "build:all": "pnpm -r build"
     }
-  }
-  
+}
